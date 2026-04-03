@@ -1,7 +1,7 @@
 {
   "name": "ccfbgc",
-  "version": "1.0.2",
-  "description": "ccf bgc",
+  "version": "1.0.3",
+  "description": "CCF BGC API",
   "main": "bgc.js",
   "dependencies": {
     "axios": "^1.4.0",
@@ -45,7 +45,7 @@
     "test": "node bgc.js"
   },
   "keywords": [
-    "ESNDP GIS"
+    "BGC APP"
   ],
   "author": "Carlo O. Dominguez",
   "license": "ISC",

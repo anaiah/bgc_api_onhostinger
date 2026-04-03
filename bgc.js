@@ -280,7 +280,11 @@ io.on('connection', (socket) => {
 //====== server listen to por
 
 //orig ->const port = process.env.PORT||10000
-const PORT = Number(process.env.PORT || 3000);
+//const PORT = Number(process.env.PORT );
+const PORT = Number(process.env.PORT);
+if (!PORT) throw new Error('PORT is not set');
+//onst HOST = '0.0.0.0';
+
 const HOST = '0.0.0.0';
 
 server_https.listen( PORT , HOST ,()=>{
