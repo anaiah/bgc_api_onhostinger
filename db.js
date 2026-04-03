@@ -10,7 +10,7 @@ const pool = mysql.createPool({
     database: 'U462718148_ccfbgc',
     port:3306,
      waitForConnections: true, // default
-    connectionLimit: 200,       // <-- Set your pool size here
+    connectionLimit: 70,       // <-- Set your pool size here
     queueLimit: 0,      
     multipleStatements: true,
     ssl: { rejectUnauthorized: false }
@@ -23,7 +23,7 @@ const configMysql = {
     database: 'U462718148_ccfbgc',
     port:3306,
      waitForConnections: true, // default
-    connectionLimit: 200,       // <-- Set your pool size here
+    connectionLimit: 70,       // <-- Set your pool size here
     queueLimit: 0,      
     multipleStatements: true,
     ssl: { rejectUnauthorized: false }
@@ -51,7 +51,7 @@ module.exports={
                 database: 'U462718148_ccfbgc',
                 port:3306,
                   waitForConnections: true, // default
-                connectionLimit: 200,       // <-- Set your pool size here
+                connectionLimit: 70,       // <-- Set your pool size here
                 queueLimit: 0,      
                 multipleStatements: true,
                 ssl: { rejectUnauthorized: false }
