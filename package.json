@@ -5,7 +5,8 @@
   "main": "bgc.js",
 
 "scripts": {
-  "start": "node bgc.js"
+  "start": "node bgc.js",
+  "build": "echo \"No build step\""
   },
 
 

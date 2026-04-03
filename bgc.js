@@ -288,5 +288,5 @@ if (!PORT) throw new Error('PORT is not set');
 const HOST = '0.0.0.0';
 
 server_https.listen( PORT , HOST ,()=>{
-    console.log(`NEWLY CREATED ** BGC FINAL API -- listening to port ${PORT}`)
+    console.log(`NEWLY CREATED *** BGC FINAL API -- listening to port ${PORT}`)
 })
