@@ -12,7 +12,8 @@ const pool = mysql.createPool({
      waitForConnections: true, // default
     connectionLimit: 200,       // <-- Set your pool size here
     queueLimit: 0,      
-    multipleStatements: true
+    multipleStatements: true,
+    ssl: { rejectUnauthorized: false }
 });
 
 const configMysql = {
@@ -24,7 +25,8 @@ const configMysql = {
      waitForConnections: true, // default
     connectionLimit: 200,       // <-- Set your pool size here
     queueLimit: 0,      
-    multipleStatements: true
+    multipleStatements: true,
+    ssl: { rejectUnauthorized: false }
 }
 
 // Promisify for async/await
@@ -51,7 +53,8 @@ module.exports={
                   waitForConnections: true, // default
                 connectionLimit: 200,       // <-- Set your pool size here
                 queueLimit: 0,      
-                multipleStatements: true
+                multipleStatements: true,
+                ssl: { rejectUnauthorized: false }
             });
             con.connect((err) => {
                 if(err){
