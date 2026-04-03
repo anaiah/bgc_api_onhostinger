@@ -270,7 +270,7 @@ io.on('connection', (socket) => {
 
         console.log( connectedSockets)
 
-        console.log(`BGC's User Connected ${nLogged}`)
+        console.log(`NEWLY CREATED ** BGC's User Connected ${nLogged}`)
         //io.emit('logged',`Zonked connected: ${nLogged }`)
     })
 
@@ -288,5 +288,5 @@ if (!PORT) throw new Error('PORT is not set');
 const HOST = '0.0.0.0';
 
 server_https.listen( PORT , HOST ,()=>{
-    console.log(`BGC FINAL API -- listening to port ${PORT}`)
+    console.log(`NEWLY CREATED ** BGC FINAL API -- listening to port ${PORT}`)
 })
