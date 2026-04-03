@@ -281,7 +281,7 @@ io.on('connection', (socket) => {
 
 //orig ->const port = process.env.PORT||10000
 //const PORT = Number(process.env.PORT );
-const PORT = Number(process.env.PORT);
+const PORT = Number(process.env.PORT||3000);
 if (!PORT) throw new Error('PORT is not set');
 //onst HOST = '0.0.0.0';
 
