@@ -70,9 +70,9 @@ module.exports = (io) => {
 //========login post
 let dbconfig  ={
     host: 'srv2102.hstgr.io',
-    user: 'U462718148_ccfbgc',    
+    user: 'u462718148_ccfbgc',    
     password: '6@32OEdQc',
-    database: 'U462718148_ccfbgc',
+    database: 'u462718148_ccfbgc',
     port:3306,
      waitForConnections: true, // default
     connectionLimit: 200,       // <-- Set your pool size here
