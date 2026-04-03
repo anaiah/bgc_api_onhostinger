@@ -74,7 +74,7 @@ router.get('/loginpost/:uid/:pwd', async (req, res) => {
   const { uid, pwd } = req.params;
   console.log('firing login with Authenticate====== ', uid, pwd, ' ========');
 
-  let conn;
+  let conn; 
 
   try {
     conn = await mysqls.createConnection(dbconfig);
