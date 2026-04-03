@@ -68,19 +68,6 @@ const xlsx = require('xlsx');
 module.exports = (io) => {
 
 //========login post
-let dbconfig  ={
-    host: 'srv2102.hstgr.io',
-    user: 'u462718148_ccfbgc',    
-    password: '6@32OEdQc',
-    database: 'u462718148_ccfbgc',
-    port:3306,
-     waitForConnections: true, // default
-    connectionLimit: 200,       // <-- Set your pool size here
-    queueLimit: 0,      
-    multipleStatements: true
-}
-
-//========login post
 router.get('/loginpost/:uid/:pwd', async (req, res) => {
   const { uid, pwd } = req.params;
   console.log('firing login with Authenticate====== ', uid, pwd, ' ========');
@@ -88,7 +75,8 @@ router.get('/loginpost/:uid/:pwd', async (req, res) => {
   let conn; 
 
   try {
-    conn = await mysqls.createConnection(dbconfig);
+    
+    conn = await mysqls.createConnection(db.configMysql);
 
     const sql = `
       SELECT a.*, b.grp_description, c.id AS ministry_id,

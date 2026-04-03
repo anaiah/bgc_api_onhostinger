@@ -9,10 +9,12 @@ const pool = mysql.createPool({
     password: '6@32OEdQc',
     database: 'u462718148_ccfbgc',
     port:3306,
-     waitForConnections: true, // default
-    connectionLimit: 10,       // <-- Set your pool size here
+    waitForConnections: true, // default
+    connectionLimit: 70,       // <-- Set your pool size here
     queueLimit: 0,      
-    multipleStatements: true
+    multipleStatements: false,
+    connectTimeout:10000, // 10 seconds
+
 });
 
 const configMysql = {
@@ -22,9 +24,10 @@ const configMysql = {
     database: 'u462718148_ccfbgc',
     port:3306,
      waitForConnections: true, // default
-    connectionLimit: 10,       // <-- Set your pool size here
-    queueLimit: 0,      
-    multipleStatements: true
+    connectionLimit: 70,       // <-- Set your pool size here
+    queueLimit: 0,multipleStatements: false,
+    connectTimeout:10000, // 10 seconds
+    
 }
 
 // Promisify for async/await
@@ -32,7 +35,7 @@ const poolPromise = pool.promise();
 
 module.exports={
 
-  configMysql,
+    configMysql,
 
     query: (sql, params) => poolPromise.query(sql, params),
   
@@ -48,10 +51,11 @@ module.exports={
                 password: '6@32OEdQc',
                 database: 'u462718148_ccfbgc',
                 port:3306,
-                  waitForConnections: true, // default
-                connectionLimit: 10,       // <-- Set your pool size here
-                queueLimit: 0,      
-                multipleStatements: true
+                waitForConnections: true, // default
+                connectionLimit: 70,       // <-- Set your pool size here
+                queueLimit: 0,multipleStatements: false,
+                connectTimeout:10000, // 10 seconds
+    
             });
             con.connect((err) => {
                 if(err){
