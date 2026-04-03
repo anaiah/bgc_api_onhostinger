@@ -53,6 +53,11 @@ app.use( cookieParser() )
 
 const db  = require('../db')// your pool module
 
+const xlsx = require('xlsx');
+const ExcelJS = require('exceljs');
+
+const mysqls = require('mysql2/promise')
+
 //=====CLAIMS UPLOAD
 // Set up multer for file uploads
 
@@ -63,46 +68,59 @@ const xlsx = require('xlsx');
 module.exports = (io) => {
 
      //========login post
-    router.get('/loginpost/:uid/:pwd',async(req,res)=>{
-        
-        const{uid,pwd}= req.params
 
-        console.log('firing login with Authenticate====== ',uid, pwd,' ========')
-        
-        try {
-            const sql =`select a.*, b.grp_description, c.id as ministry_id,
-            c.ministry_description, c.segment from bgc_users a 
-            left join bgc_group b on a.grp_id = b.grp_id
-            left join bgc_ministry c on a.ministry_id = c.id
-            where email=$1` 
-                    
-            const result = await db.query(sql, [ uid ])
-           
-            console.log('logindata', result.rows)
+//========login post
+router.get('/loginpost/:uid/:pwd', async (req, res) => {
+  const { uid, pwd } = req.params;
+  console.log('firing login with Authenticate====== ', uid, pwd, ' ========');
 
-            if(result.rows.length > 0){
-                res.json({found:true, data:result.rows});
-            }else{
-                res.json({found:false, data:[]});
-            }    
-           
-        } catch (err) {
+  let conn;
 
-            console.log('Error in storedproc Login:',err)
-                
-            const xdata=[{
-                message: "No Matching Record!",
-                voice:"No Matching Record!",
-                found:false
-            }]
-            
-            console.error('Error:', err);
-            
-            return res.status(200).json(xdata)  
-            //res.status(500).send('Error occurred');
-        }
-         
-    })//== end loginpost
+  try {
+    conn = await mysqls.createConnection(dbconfig);
+
+    const sql = `
+      SELECT a.*, b.grp_description, c.id AS ministry_id,
+             c.ministry_description, c.segment
+      FROM bgc_users a 
+      LEFT JOIN bgc_group b ON a.grp_id = b.grp_id
+      LEFT JOIN bgc_ministry c ON a.ministry_id = c.id
+      WHERE a.email = ?
+    `;
+
+    const [rows] = await conn.query(sql, [uid]);
+
+    console.log('logindata', rows);
+
+    if (rows.length > 0) {
+      return res.json({ found: true, data: rows });
+    } else {
+      return res.json({ found: false, data: [] });
+    }
+
+  } catch (err) {
+    console.log('Error in Login:', err);
+
+    const xdata = [{
+      message: "No Matching Record!",
+      voice: "No Matching Record!",
+      found: false
+    }];
+
+    console.error('Error:', err);
+    return res.status(200).json(xdata);
+
+  } finally {
+    if (conn) {
+      try {
+        await conn.end();
+      } catch (endErr) {
+        console.error('Error closing connection:', endErr);
+      }
+    }
+  }
+});
+
 
     //=== SAVE PROJECT TO MAP pgsql DATABASE 
     const upload = multer({ storage: multer.memoryStorage() }).any();
