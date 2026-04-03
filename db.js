@@ -3,124 +3,32 @@ const {Client} = require('pg');
 
 let client
 
-const pool = mysql.createPool({
-    host: 'srv2102.hstgr.io',
-    user: 'u462718148_ccfbgc',    
-    password: '6@32OEdQc',
-    database: 'u462718148_ccfbgc',
-    port:3306,
-    waitForConnections: true, // default
-    connectionLimit: 70,       // <-- Set your pool size here
-    queueLimit: 0,      
-    multipleStatements: false,
-    connectTimeout:10000, // 10 seconds
 
-});
+// Option A: optional .env (only if present) 
+try { require('dotenv').config(); 
+} catch (e) {
 
-const configMysql = {
-    host: 'srv2102.hstgr.io',
-    user: 'u462718148_ccfbgc',    
-    password: '6@32OEdQc',
-    database: 'u462718148_ccfbgc',
-    port:3306,
-     waitForConnections: true, // default
-    connectionLimit: 70,       // <-- Set your pool size here
-    queueLimit: 0,multipleStatements: false,
-    connectTimeout:10000, // 10 seconds
-    
-}
+} 
+const config = { 
+    host: process.env.DB_HOST || 'srv2102.hstgr.io', 
+    user: process.env.DB_USER || 'u462718148_ccfbgc', 
+    password: process.env.DB_PASSWORD || '6@32OEdQc', 
+    database: process.env.DB_NAME || 'u462718148_ccfbgc', 
+    port: Number(process.env.DB_PORT || 3306), 
+    waitForConnections: true, 
+    connectionLimit: 35, 
+    queueLimit: 0, 
+    multipleStatements: false, 
+    connectTimeout: 10000, 
+    enableKeepAlive: true, 
+    charset: 'utf8mb4', 
 
-// Promisify for async/await
-const poolPromise = pool.promise();
+}; 
 
-module.exports={
+const pool = mysql.createPool(config).promise(); 
 
-    configMysql,
-
-    query: (sql, params) => poolPromise.query(sql, params),
-  
-    // optionally, add a method to get a connection if needed:
-    getConnection: () => poolPromise.getConnection(),
-    
-    connectDb :async()=>{
-
-        return new Promise((resolve,reject)=>{
-            const con = mysql.createConnection( { 
-                host: 'srv2102.hstgr.io',
-                user: 'u462718148_ccfbgc',    
-                password: '6@32OEdQc',
-                database: 'u462718148_ccfbgc',
-                port:3306,
-                waitForConnections: true, // default
-                connectionLimit: 70,       // <-- Set your pool size here
-                queueLimit: 0,multipleStatements: false,
-                connectTimeout:10000, // 10 seconds
-    
-            });
-            con.connect((err) => {
-                if(err){
-                    reject(err);
-                }
-                    resolve(con);
-            });
-        
-        })//END RETURN ,
-        
-    },
-    closeDb : (con)=> {
-        con.destroy();
-    },
-
-    // conn:{
-    //         host: "ep-still-star-a5s7o7wh-pooler.us-east-2.aws.neon.tech",
-    //         user:"neondb_owner",
-    //         password:"npg_s7LehAjy9Ipv",
-    //         database:"asianow",
-    //         port:5432,
-    //         ssl:{
-    //             rejectUnauthorized:false,
-    //         },
-    //         min: 4,
-    //         max: 10,
-    //         idleTimeoutMillis: 1000,
-    //         multipleStatements:true
-    //     },
-    // connectPg : async()=>{
-        
-    //     client = new Client({
-    //         host: "ep-still-star-a5s7o7wh-pooler.us-east-2.aws.neon.tech",
-    //         user:"neondb_owner",
-    //         password:"npg_s7LehAjy9Ipv",
-    //         database:"asianow",
-    //         port:5432,
-    //         ssl:{
-    //             rejectUnauthorized:false,
-    //         },
-    //         min: 4,
-    //         max: 10,
-    //         idleTimeoutMillis: 1000,
-    //         multipleStatements:true
-    //     })
-
-    //     await client.connect()
-
-    //},
-    /*
-    query: async( sql, params )=>{
-        if(client){
-            return await client.query(sql,params)
-        }else{
-            throw new Error('not conek')
-        }
-    },
-    */
-
-    closePg: async()=> {
-        if(client){
-            await client.end();    
-        }
-        
-    },
-}//END EXPORT
-
-
+module.exports = {
+     configMysql: config, 
+     query: (sql, params) => pool.query(sql, params), 
+     getConnection: () => pool.getConnection() 
+};

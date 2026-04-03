@@ -70,14 +70,11 @@ module.exports = (io) => {
 //========login post
 router.get('/loginpost/:uid/:pwd', async (req, res) => {
   const { uid, pwd } = req.params;
+  
   console.log('firing login with Authenticate====== ', uid, pwd, ' ========');
 
-  let conn; 
-
   try {
-    
-    conn = await mysqls.createConnection(db.configMysql);
-
+  
     const sql = `
       SELECT a.*, b.grp_description, c.id AS ministry_id,
              c.ministry_description, c.segment
@@ -87,7 +84,7 @@ router.get('/loginpost/:uid/:pwd', async (req, res) => {
       WHERE a.email = ?
     `;
 
-    const [rows] = await conn.query(sql, [uid]);
+    const [rows] = await db.query(sql, [uid]);
 
     console.log('logindata', rows);
 
@@ -202,7 +199,6 @@ router.get('/loginpost/:uid/:pwd', async (req, res) => {
                     parseInt(id, 10)
                 ]);
 
-
                 return res.json({ ok: true, action: 'record add', row: ins.rows[0] });
             }
         } catch (err) {
@@ -210,9 +206,7 @@ router.get('/loginpost/:uid/:pwd', async (req, res) => {
             return res.status(500).json({ ok: false, message: 'Server error', error: err.message });
         }
 
-
     })
-
 
     //===========get chart attendance AM PM
     // GET /chart/headcount-by-ministry
@@ -329,7 +323,6 @@ router.get('/loginpost/:uid/:pwd', async (req, res) => {
                 rr.date_from;
             `;
 
-
             const result = await db.query(sql, [date]);
 
             console.log(sql, result)
@@ -401,131 +394,6 @@ router.get('/loginpost/:uid/:pwd', async (req, res) => {
             res.status(500).json({ success: false, error: 'Server error' });
         }
     });
-
-
-    router.post('/newsitepost/:region', upload ,async(req,res)=>{
-        console.log('===newsitepost() SAVING DATA=====')
-                
-        try {
-            const { projectCode, 
-                projectName, 
-                projectOwner, 
-                latField, 
-                lonField,
-                openingSelect,
-                addressField,
-                cityField, 
-                elevationField,
-                competitors } = req.body
-            
-            const fileBuffer = req.files[0].buffer;
-            const originalFileName = req.files[0].originalname
-            const renamedFileName = `${projectCode}.jpg`
-
-            // console.log(fileBuffer )
-
-            // console.log( projectCode, projectName, projectOwner,  latField, lonField, addressField, elevationField)
-
-            // Insert into database
-            const projectResult = await db.query(
-                `INSERT INTO esndp_projects (project_code, name, owner, address, city, elevation, latitude, longitude, open_type, region)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-                RETURNING id`,
-                [
-                    projectCode, 
-                    projectName, 
-                    projectOwner, 
-                    addressField,  
-                    cityField, 
-                    elevationField, 
-                    latField, 
-                    lonField,
-                    openingSelect,
-                    req.params.region
-                ]
-            );
-
-            let obj = {}, xdata=[]
-
-            obj.pic = projectCode+".jpg"
-            obj.lat = latField
-            obj.lon = lonField
-            obj.project = projectName
-            obj.proj_owner = projectOwner
-            obj.address =  addressField + ',' + cityField
-            
-            xdata.push(obj)
-
-            //====== INSERT TO COMPETITORS TABLE
-            const projectId = projectResult.rows[0].id; // ID of the new project
-
-            const establishmentsDataJSON = JSON.stringify(competitors)
-
-            // Insert competitors data into the esndp_competitors table
-            const competitorResult = await db.query(
-                `INSERT INTO esndp_competitors (project_id, establishments)
-                VALUES ($1, $2)
-                RETURNING id`,
-                [projectId, establishmentsDataJSON]
-            );
-
-            //==== END INSERT TO COMPETITORS TABLE
-
-            //====== START PROCESSING IMAGE FILE TO UPLOAD
-            try{
-                //process the image with Sharp
-                // fileBuffer is the orig buffer file
-                // then processedbuffer is from sharp which is 
-                // already a resized Image
-
-                const processedBuffer = await sharp(fileBuffer)
-                    .resize({width:400})
-                    .jpeg({quality:30})
-                    .toBuffer();
-
-
-                const ftp_client = new Client()
-
-                try{
-
-                     // basic-ftp account
-                    await ftp_client.access({
-                        host: "ftp.asianowapp.com",
-                        user: "u899193124.ftpesndp",//ftpesndp
-                        password: "Ftp@esndp0811", //Ftp@esndp0811
-
-						// //path: 'public_html/app/assets/resized'			
-                    })
-
-                    // await ftp_client.ensureDir('public_html/app/esndp/') //ensure dir exists
-                    // await ftp_client.cd("public_html/app/esndp/");
-                    console.log('FTP Client connected==========')
-
-                    //upload
-                    await ftp_client.uploadFrom( Readable.from(processedBuffer), renamedFileName)
-
-                }catch(err){
-                    console.log('FTP ERROR',err)
-                }finally{
-                    console.log('TRANSFERRED')
-                    ftp_client.close()  //close ftp
-
-                }
-            }catch(err){
-                console.log('Error processing Image:' ,err)
-            } finally{
-                //CLEANUP MEMORYSTORAGE OF IMAGEFILE
-                req.files[0].buffer = null;
-                res.json({ info: xdata, success: true, voice: 'Data Saved!' });
-
-            }
-            
-        } catch (err) {
-            console.error('Error saving project:', err);
-            res.status(500).json({ success: false, error: err.message });
-        }
-
-    })
 
     router.get('/testis', async (req,res) => {
             console.log('FRING TESTIS IN API.JS')

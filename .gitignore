@@ -32,3 +32,4 @@ routes/coor_postgresql_version.js
 routes/template.js
 *.pdf
 *.png
+db_bak04042k26.js
