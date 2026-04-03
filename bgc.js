@@ -35,7 +35,7 @@ const io = require("socket.io")( server_https, {
 const connectToMySql = async () => {
   try {
     const [rows] = await db.query('SELECT NOW() AS now');
-    console.log('✅ MySQL DB connected. Server time:', rows[0].now);
+    console.log('✅ BGCMySQL DB connected. Server time:', rows[0].now);
   } catch (err) {
     console.error('❌ BGC MySQL DB connection failed:', err.message);
     console.error(err);
@@ -61,7 +61,7 @@ const path = require('path')
 
 //=======================
 //important, tell express that the data returned is json
-app.use(express.json()) 
+app.use(express.json({limit:'50mb'})) 
 app.use(express.urlencoded({extended:true}))
 
 // to support URL-encoded bodies
@@ -279,8 +279,10 @@ io.on('connection', (socket) => {
 })//end io conn
 //====== server listen to por
 
-const port = process.env.PORT||10000
+//orig ->const port = process.env.PORT||10000
+const PORT = Number(process.env.PORT || 3000);
+const HOST = '0.0.0.0';
 
-server_https.listen( port ,()=>{
-    console.log(`BGC FINAL API -- listening to port ${port}`)
+server_https.listen( PORT , HOST ,()=>{
+    console.log(`BGC FINAL API -- listening to port ${PORT}`)
 })
