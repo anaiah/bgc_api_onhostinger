@@ -119,7 +119,7 @@ router.get('/loginpost/:uid/:pwd', async (req, res) => {
     }];
 
     console.error('Error:', err);
-    return res.status(200).json(xdata);
+    return res.status(500).json(xdata);
 
   } finally {
     if (conn) {
