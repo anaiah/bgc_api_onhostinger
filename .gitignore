@@ -33,3 +33,4 @@ routes/template.js
 *.pdf
 *.png
 db_bak04042k26.js
+bgcapi_bak04042k26.js

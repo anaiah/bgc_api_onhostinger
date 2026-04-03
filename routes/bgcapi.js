@@ -23,6 +23,7 @@ const cors = require('cors')
 const path = require('path')
 const fs = require('fs');
 
+const jwt = require('jsonwebtoken');
 
 const axios = require('axios')
 
@@ -88,11 +89,25 @@ router.get('/loginpost/:uid/:pwd', async (req, res) => {
 
     console.log('logindata', rows);
 
-    if (rows.length > 0) {
-      return res.json({ found: true, data: rows });
-    } else {
-      return res.json({ found: false, data: [] });
-    }
+    if (!rows.length > 0) return res.json({ found: false, data: [] });
+    
+    //token
+    const token = jwt.sign(
+    {   
+        userId: rows[0].id, 
+        email: rows[0].email, 
+        fullName: rows[0].full_name
+    },
+        'bgcsecretkey', 
+    {   
+        expiresIn: '7d' 
+    });
+    
+    return res.json({
+        found: true,
+        data: rows,
+        token
+    });
 
   } catch (err) {
     console.log('Error in Login:', err);
