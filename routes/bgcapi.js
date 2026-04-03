@@ -77,7 +77,7 @@ router.get('/loginpost/:uid/:pwd', async (req, res) => {
   let conn; 
 
   try {
-    conn = await mysqls.createConnection(dbconfig);
+    conn = await mysqls.createConnection(db.configMysql);
 
     const sql = `
       SELECT a.*, b.grp_description, c.id AS ministry_id,
