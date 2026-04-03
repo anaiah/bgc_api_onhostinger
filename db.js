@@ -32,6 +32,8 @@ const poolPromise = pool.promise();
 
 module.exports={
 
+  configMysql,
+
     query: (sql, params) => poolPromise.query(sql, params),
   
     // optionally, add a method to get a connection if needed:
