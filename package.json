@@ -3,6 +3,12 @@
   "version": "1.0.3",
   "description": "CCF BGC API",
   "main": "bgc.js",
+
+"scripts": {
+  "start": "node bgc.js"
+  },
+
+
   "dependencies": {
     "axios": "^1.4.0",
     "basic-ftp": "^5.0.5",
@@ -38,12 +44,8 @@
     "stream": "^0.0.2",
     "xlsx": "^0.18.5"
   },
-  "scripts": {
-    "build": "node bgc.js",
-    "start": "node bgc.js",
-    "dev": "nodemon --exec node --env-file=.env bgc.js" ,
-    "test": "node bgc.js"
-  },
+  
+  
   "keywords": [
     "BGC APP"
   ],
