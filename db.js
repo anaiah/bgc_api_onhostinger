@@ -4,10 +4,10 @@ const {Client} = require('pg');
 let client
 
 const pool = mysql.createPool({
-    host: 'srv1759.hstgr.io',
-    user: 'u899193124_asianowjt',
-    password: 'M312c4@g125c3',
-    database: 'u899193124_asianowjt',
+    host: 'srv2102.hstgr.io',
+    user: 'U899193124_ccfbgc',
+    password: '6@32OEdQc',
+    database: 'U899193124_ccfbgc',
     port:3306,
     waitForConnections: true, // default
     connectionLimit: 200,       // <-- Set your pool size here
