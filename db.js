@@ -17,9 +17,9 @@ const pool = mysql.createPool({
 
 const configMysql = {
     host: 'srv2102.hstgr.io',
-    user: 'U899193124_ccfbgc',    
+    user: 'U462718148_ccfbgc',    
     password: '6@32OEdQc',
-    database: 'U899193124_ccfbgc',
+    database: 'U462718148_ccfbgc',
     port:3306,
      waitForConnections: true, // default
     connectionLimit: 200,       // <-- Set your pool size here
@@ -43,12 +43,14 @@ module.exports={
 
         return new Promise((resolve,reject)=>{
             const con = mysql.createConnection( { 
-                //host: 'srv1759.hstgr.io',
                 host: 'srv2102.hstgr.io',
-                user: 'U899193124_ccfbgc',
+                user: 'U462718148_ccfbgc',    
                 password: '6@32OEdQc',
-                database: 'U899193124_ccfbgc',
+                database: 'U462718148_ccfbgc',
                 port:3306,
+                  waitForConnections: true, // default
+                connectionLimit: 200,       // <-- Set your pool size here
+                queueLimit: 0,      
                 multipleStatements: true
             });
             con.connect((err) => {

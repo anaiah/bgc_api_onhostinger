@@ -48,9 +48,9 @@ connectToMySql();
 const connectToDB = async () =>{
 try {
     const res = await db.query('SELECT NOW() AS now');
-    console.log('✅ BGC DB connected. Server time:', res.rows[0].now);
+    console.log('✅ BGC MySQL DB connected. Server time:', res.rows[0].now);
   } catch (err) {
-    console.error('❌ BGC DB connection failed:', err.message);
+    console.error('❌ BGC MySQL DB connection failed:', err.message);
     console.error(err); // extra details
   }
 }
