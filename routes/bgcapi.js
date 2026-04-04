@@ -51,6 +51,7 @@ const sharp = require('sharp')   // for image manipulate
 const ftpclient = require('scp2')
 
 app.use( cookieParser() )
+app.use( cors())
 
 const db  = require('../db')// your pool module
 
@@ -174,9 +175,13 @@ let clients = [];
 
 // 1. Endpoint for clients to "subscribe" to notifications
 router.get('/notifications', (req, res) => {
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
+     res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        // Add this line to disable proxy buffering
+        'X-Accel-Buffering': 'no' 
+    });
 
     // Add this client to our list
     const clientId = Date.now();
