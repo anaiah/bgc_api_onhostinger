@@ -298,7 +298,10 @@ router.post('/saveattendance/:id/:ministry/:ministryId', async (req, res) => {
             ORDER BY id DESC LIMIT 1
         `;
         const checkResult = await db.query(checkSql, [segmentSelect, serviceSelect]);
+        
 
+        console.log('Check Result:', checkResult);
+        
         let finalId;
         let action;
 
