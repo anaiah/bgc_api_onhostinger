@@ -147,7 +147,7 @@ router.get('/loginpost/:uid/:pwd', async (req, res) => {
 //================THIS IS FOR "PUSHER" REALTIME NOTIFICATIONS
 let loggedClients = [];
 
-// YOUR UPDATE ROUTE
+// YOUR UPDATE ROUTE after login
 router.post('/update-entry', (req, res) => {
     const { id, user, ministry } = req.body;
 
@@ -170,6 +170,19 @@ router.post('/update-entry', (req, res) => {
 
     res.json({ success: true, count: loggedClients.length });
 
+});
+
+//route to give update to bossings
+router.post('/send-update', (req, res) => {
+   const { id, user, ministry } = req.body;
+
+    // Trigger ONLY to that user's specific channel
+    pusher.trigger(`user-${targetId}`, "personal-alert", {
+        message: msg,
+        sender: "System"
+    });
+
+    res.json({ success: true });
 });
 
 //========PUSHER LOGOUT
