@@ -145,7 +145,7 @@ router.get('/loginpost/:uid/:pwd', async (req, res) => {
 });
 
 //================THIS IS FOR "PUSHER" REALTIME NOTIFICATIONS
-let clients = [];
+let loggedClients = [];
 
 // YOUR UPDATE ROUTE
 router.post('/update-entry', (req, res) => {
