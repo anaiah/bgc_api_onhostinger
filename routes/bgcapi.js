@@ -281,274 +281,200 @@ async function emitEvent({ target_user_id = null, type, payload = null }) {
 
 
     //==== insert headcount in bgc =====//
-    router.post('/saveattendance/:id/:ministry/:ministryId', async(req,res)=>{
-        const { id, ministry, ministryId } = req.params;
-        const { serviceSelect, segmentSelect, countInput } = req.body;
-        
-        console.log('===firing saveattendance() with id====', id ,ministry, ministryId , req.body)
-        console.log('saveattendance payload:', {
-        ministryId,
-        countInput,
-        serviceSelect,
-        segmentSelect,
-        ministry,
-        addedBy: id
-        });
-        
-        if (!segmentSelect || !countInput) {
-            return res.status(400).json({ ok: false, message: 'segmentSelect and countInput are required' });
-        }
+router.post('/saveattendance/:id/:ministry/:ministryId', async (req, res) => {
+    const { id, ministry, ministryId } = req.params;
+    const { serviceSelect, segmentSelect, countInput } = req.body;
 
-        try {
-            // Check by segment + today
-            const checkSql = `
-            SELECT id
-            FROM bgc_headcount
-            WHERE ministry_segment = $1 and 
-            service = $2
-                AND date_added::date = CURRENT_DATE
-            ORDER BY id DESC
-            LIMIT 1
+    if (!segmentSelect || !countInput) {
+        return res.status(400).json({ ok: false, message: 'segmentSelect and countInput are required' });
+    }
+
+    try {
+        // MySQL uses CURDATE() and ? for placeholders
+        const checkSql = `
+            SELECT id FROM bgc_headcount 
+            WHERE ministry_segment = ? AND service = ? 
+            AND DATE(date_added) = CURDATE()
+            ORDER BY id DESC LIMIT 1
+        `;
+        const checkResult = await db.query(checkSql, [segmentSelect, serviceSelect]);
+
+        let finalId;
+        let action;
+
+        if (checkResult.length > 0) {
+            finalId = checkResult[0].id;
+            action = 'update';
+            const updateSql = `
+                UPDATE bgc_headcount SET 
+                ministry_id = ?, headcount = ?, service = ?, 
+                ministry_name = ?, added_by = ?, date_added = NOW()
+                WHERE id = ?
             `;
-            const checkResult = await db.query(checkSql, [segmentSelect, serviceSelect]);
-
-            if (checkResult.rows.length > 0) {
-                const existingId = checkResult.rows[0].id;
-
-                const updateSql = `
-                    UPDATE bgc_headcount
-                    SET
-                    ministry_id    = $1,
-                    headcount     = $2,
-                    service       = $3,
-                    ministry_name = $4,
-                    added_by      = $5,
-                    date_added    = NOW()
-                    WHERE id = $6
-                    RETURNING *;
-                `;
-                const upd = await db.query(updateSql, [
-                    parseInt(ministryId, 10),
-                    parseInt(countInput, 10),
-                    serviceSelect || null,
-                    ministry,
-                    parseInt(id, 10),
-                    existingId
-                ]);
-
-                return res.json({ ok: true, action: 'update', row: upd.rows[0] });
-            } else {
-                const insertSql = `
-                INSERT INTO bgc_headcount
-                    (ministry_id, headcount, service, ministry_segment, ministry_name, added_by, date_added)
-                    VALUES( $1, $2, $3, $4, $5, $6, NOW())
-                    RETURNING *;
-                `;
-
-                const ins = await db.query(insertSql, [
-                    parseInt(ministryId, 10),
-                    parseInt(countInput, 10),
-                    serviceSelect || null,
-                    segmentSelect,
-                    ministry,
-                    parseInt(id, 10)
-                ]);
-
-                return res.json({ ok: true, action: 'record add', row: ins.rows[0] });
-            }
-        } catch (err) {
-            console.error('saveattendance error:', err);
-            return res.status(500).json({ ok: false, message: 'Server error', error: err.message });
+            await db.query(updateSql, [
+                parseInt(ministryId), parseInt(countInput), serviceSelect, ministry, parseInt(id), finalId
+            ]);
+        } else {
+            action = 'record add';
+            const insertSql = `
+                INSERT INTO bgc_headcount 
+                (ministry_id, headcount, service, ministry_segment, ministry_name, added_by, date_added)
+                VALUES (?, ?, ?, ?, ?, ?, NOW())
+            `;
+            const ins = await db.query(insertSql, [
+                parseInt(ministryId), parseInt(countInput), serviceSelect, segmentSelect, ministry, parseInt(id)
+            ]);
+            finalId = ins.insertId;
         }
 
-    })
+        // Fetch the row to return it (since MySQL has no RETURNING clause)
+        const row = await db.query("SELECT * FROM bgc_headcount WHERE id = ?", [finalId]);
+        return res.json({ ok: true, action, row: row[0] });
 
-    //===========get chart attendance AM PM
-    // GET /chart/headcount-by-ministry
-    router.get('/headcount-by-ministry', async (req, res) => {
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ ok: false, error: err.message });
+    }
+});
+
+//===========get chart attendance AM PM
+// GET /chart/headcount-by-ministry
+router.get('/headcount-by-ministry', async (req, res) => {
     try {
         const sql = `
-        select
-        ministry_name,
-        service,
-        ministry_segment,
-        sum(headcount) as total
-        from bgc_headcount
-        where (date_added at time zone 'Asia/Manila')::date = (now() at time zone 'Asia/Manila')::date
-        group by ministry_name, service, ministry_segment, date_added
-        order by ministry_name, service;
+            SELECT ministry_name, service, ministry_segment, SUM(headcount) as total
+            FROM bgc_headcount
+            WHERE DATE(date_added) = CURDATE()
+            GROUP BY ministry_name, service, ministry_segment
+            ORDER BY ministry_name, service;
         `;
-        
-        const result = await db.query(sql);
-        const rows = result.rows || [];
+        const rows = await db.query(sql);
 
-
-        console.log( sql, rows)
-        // categories = unique ministry names
         const categories = [...new Set(rows.map(r => r.ministry_name))];
-
-        // collect unique segments (normalized)
         const norm = s => (s || '').toString().trim();
-
-        // collect unique segments (normalized)
         const segments = [...new Set(rows.map(r => norm(r.ministry_segment)).filter(s => s))];
 
-        // build combos = for each segment, AM and PM (keep deterministic order)
         const combos = [];
         segments.forEach(seg => {
-        combos.push({ service: 'AM', segment: seg, name: `AM • ${seg}` });
-        combos.push({ service: 'PM', segment: seg, name: `PM • ${seg}` });
+            combos.push({ service: 'AM', segment: seg, name: `AM • ${seg}` });
+            combos.push({ service: 'PM', segment: seg, name: `PM • ${seg}` });
         });
 
-        // build a lookup map from ministry+service+segment to total
         const map = new Map();
         rows.forEach(r => {
-            const key = `${r.ministry_name}||${(r.service||'').toString().trim()}||${norm(r.ministry_segment)}`;
+            const key = `${r.ministry_name}||${norm(r.service)}||${norm(r.ministry_segment)}`;
             map.set(key, Number(r.total));
         });
 
-
-        // build series: one series per combo, data aligned with categories
-        // use null for missing values so ApexCharts treats them as gaps
         let series = combos.map(c => {
-        const data = categories.map(cat => {
-            const key = `${cat}||${c.service}||${c.segment}`;
-            return map.has(key) ? map.get(key) : null;
-        });
-        return { name: c.name, data };
+            const data = categories.map(cat => {
+                const key = `${cat}||${c.service}||${c.segment}`;
+                return map.has(key) ? map.get(key) : null;
+            });
+            return { name: c.name, data };
         });
 
-        // remove series that are entirely null (no data at all)
         series = series.filter(s => s.data.some(v => v !== null));
-
         return res.json({ ok: true, categories, series });
-
-    
     } catch (err) {
-        console.error('chart/headcount-by-ministry error:', err);
         return res.status(500).json({ ok: false, message: err.message });
     }
-    });
+});
 
 
-    /**** ROOM RESERVATION, GET ROOMS AND SCHED */
-    router.get('/getrooms/:date', async (req, res) => {
-
-        console.log('====Firing getrooms() from calendar.getrooms() ')
-        const { date } = req.params; // expected 'YYYY-MM-DD'
-        if (!date) {
-            return res.status(400).json({ success: false, error: 'date is required' });
-        }
-
-        try {
-
-            const sql = `
-            SELECT
-                rr.id AS booking_id,
-                r.id,
+/**** ROOM RESERVATION, GET ROOMS AND SCHED */
+router.get('/getrooms/:date', async (req, res) => {
+    const { date } = req.params;
+    try {
+        const sql = `
+            SELECT 
+                r.id, 
                 r.room_description,
-                COALESCE(
-                    json_agg(
-                    json_build_object(
-                        'id', rr.id,
-                        'date_from', rr.date_from,
-                        'date_to', rr.date_to,
-                        'added_by', rr.added_by,
-                        'added_by_name', u.full_name,
-                        'ministry', m.ministry_description
+                (
+                    SELECT JSON_ARRAYAGG(
+                        JSON_OBJECT(
+                            'id', rr.id,
+                            'date_from', rr.date_from,
+                            'date_to', rr.date_to,
+                            'added_by', rr.added_by,
+                            'added_by_name', u.full_name,
+                            'ministry', m.ministry_description
+                        )
                     )
-                    ) FILTER (WHERE rr.id IS NOT NULL),
-                    '[]'::json
+                    FROM bgc_room_reserve rr
+                    LEFT JOIN bgc_users u ON u.id = rr.added_by
+                    LEFT JOIN bgc_ministry m ON m.id = u.ministry_id
+                    WHERE rr.room_id = r.id AND DATE(rr.date_from) = ?
                 ) AS reservations
             FROM bgc_rooms r
-            LEFT JOIN bgc_room_reserve rr
-                ON rr.room_id = r.id
-            AND rr.date_from::date = $1::date
-            LEFT JOIN bgc_users u
-                ON u.id = rr.added_by
-            LEFT JOIN bgc_ministry m
-                ON m.id = u.ministry_id
-            GROUP BY
-                r.id,
-                r.room_description,
-                rr.date_from,
-                rr.id
-            ORDER BY
-                r.room_description,
-                rr.date_from;
-            `;
-
-            const result = await db.query(sql, [date]);
-
-            console.log(sql, result)
-            res.json({
-            success: true,
-            date,
-            rooms: result.rows, // [{ id, room_description, reservations: [...] }]
-            });
-        } catch (err) {
-            console.error('Error fetching rooms:', err);
-            res.status(500).json({ success: false, error: 'Server error' });
-        }
-    });
-
-
-    // THIS IS THE ACTUAL ROOM RESERVATION
-    router.post('/room-reserve', express.json(), async (req, res) => {
+            ORDER BY r.room_description;
+        `;
+        const rooms = await db.query(sql, [date]);
         
-        console.log('firing room-reserve()----')
+        // MySQL returns the JSON as a string or object depending on your driver
+        const formattedRooms = rooms.map(room => ({
+            ...room,
+            reservations: typeof room.reservations === 'string' ? JSON.parse(room.reservations) : (room.reservations || [])
+        }));
 
-        const { room_id, date_from, date_to, added_by } = req.body;
+        res.json({ success: true, date, rooms: formattedRooms });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
 
-        if (!room_id || !date_from || !date_to || !added_by) {
-            return res.status(400).json({
-            success: false,
-            error: 'room_id, date_from, date_to, added_by are required'
+
+// THIS IS THE ACTUAL ROOM RESERVATION
+router.post('/room-reserve', async (req, res) => {
+    const { room_id, date_from, date_to, added_by } = req.body;
+    try {
+        const sql = `INSERT INTO bgc_room_reserve (room_id, date_from, date_to, added_by) VALUES (?, ?, ?, ?)`;
+        const result = await db.query(sql, [room_id, date_from, date_to, added_by]);
+        res.json({ success: true, id: result.insertId });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+
+// THIS IS FOR DELETION OF BOOKING RECORD
+// DELETE /bgc/booking/:id
+// DELETE /delete-room-reserve/:id
+router.delete('/delete-room-reserve/:id', async (req, res) => {
+    const { id } = req.params;
+
+    if (!id) {
+        return res.status(400).json({ success: false, error: 'ID is required' });
+    }
+
+    try {
+        console.log(`==== Firing delete-room-reserve for ID: ${id} ====`);
+
+        // MySQL uses ? placeholder
+        const sql = `DELETE FROM bgc_room_reserve WHERE id = ?`;
+        
+        const result = await db.query(sql, [id]);
+
+        // In MySQL, result.affectedRows tells you if the row existed and was deleted
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ 
+                success: false, 
+                error: 'Booking not found or already deleted' 
             });
         }
 
-        try {
-            const query = `
-            INSERT INTO bgc_room_reserve (room_id, date_from, date_to, added_by)
-            VALUES ($1, $2, $3, $4)
-            RETURNING id, room_id, date_from, date_to, date_added, added_by
-            `;
-            const params = [room_id, date_from, date_to, added_by];
-
-            const result = await db.query(query, params);
-
-            res.json({
+        res.json({
             success: true,
-            reservation: result.rows[0]
-            });
-        } catch (err) {
-            console.error('Error inserting reservation:', err);
-            res.status(500).json({
-            success: false,
-            error: 'Server error while saving reservation'
-            });
-        }
-    });
+            message: 'Reservation deleted successfully',
+            deletedId: id
+        });
 
-    // THIS IS FOR DELETION OF BOOKING RECORD
-    // DELETE /bgc/booking/:id
-    router.delete('/deletebooking/:id', async (req, res) => {
-        const { id } = req.params;
+    } catch (err) {
+        console.error('Error deleting reservation:', err);
+        res.status(500).json({ success: false, error: 'Server error' });
+    }
+});
 
-        try {
-            const sql = 'DELETE FROM bgc_room_reserve WHERE id = $1';
-            const result = await db.query(sql, [id]);
-
-            if (result.rowCount === 0) {
-            return res.status(404).json({ success: false, error: 'Not found' });
-            }
-
-            res.json({ success: true });
-        } catch (err) {
-            console.error('Error deleting booking:', err);
-            res.status(500).json({ success: false, error: 'Server error' });
-        }
-    });
 
     router.get('/testis', async (req,res) => {
             console.log('FRING TESTIS IN API.JS')
