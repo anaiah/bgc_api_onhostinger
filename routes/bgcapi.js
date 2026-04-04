@@ -175,6 +175,9 @@ let clients = [];
 
 // 1. Endpoint for clients to "subscribe" to notifications
 router.get('/notifications', (req, res) => {
+
+    res.setHeader('Access-Control-Allow-Origin', 'https://ccfbgc.org');
+
      res.writeHead(200, {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
