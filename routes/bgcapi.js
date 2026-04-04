@@ -178,7 +178,7 @@ router.post('/send-update', (req, res) => {
 
     // Trigger ONLY to that user's specific channel
     pusher.trigger(`user-${id}`, "personal-alert", {
-        message: msg,
+        message: `Hello ${user}! This is a personal update just for you from the BGC system!`,
         sender: "System"
     });
 
