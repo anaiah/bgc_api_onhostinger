@@ -297,11 +297,11 @@ router.post('/saveattendance/:id/:ministry/:ministryId', async (req, res) => {
             AND DATE(date_added) = CURDATE()
             ORDER BY id DESC LIMIT 1
         `;
-        const checkResult = await db.query(checkSql, [segmentSelect, serviceSelect]);
+        const [checkResult] = await db.query(checkSql, [segmentSelect, serviceSelect]);
         
 
         console.log('Check Result:', checkResult);
-        
+
         let finalId;
         let action;
 
@@ -324,14 +324,14 @@ router.post('/saveattendance/:id/:ministry/:ministryId', async (req, res) => {
                 (ministry_id, headcount, service, ministry_segment, ministry_name, added_by, date_added)
                 VALUES (?, ?, ?, ?, ?, ?, NOW())
             `;
-            const ins = await db.query(insertSql, [
+            const [ins] = await db.query(insertSql, [
                 parseInt(ministryId), parseInt(countInput), serviceSelect, segmentSelect, ministry, parseInt(id)
             ]);
             finalId = ins.insertId;
         }
 
         // Fetch the row to return it (since MySQL has no RETURNING clause)
-        const row = await db.query("SELECT * FROM bgc_headcount WHERE id = ?", [finalId]);
+        const [row] = await db.query("SELECT * FROM bgc_headcount WHERE id = ?", [finalId]);
         return res.json({ ok: true, action, row: row[0] });
 
     } catch (err) {
@@ -351,7 +351,7 @@ router.get('/headcount-by-ministry', async (req, res) => {
             GROUP BY ministry_name, service, ministry_segment
             ORDER BY ministry_name, service;
         `;
-        const rows = await db.query(sql);
+        const [rows] = await db.query(sql);
 
         const categories = [...new Set(rows.map(r => r.ministry_name))];
         const norm = s => (s || '').toString().trim();
@@ -412,7 +412,7 @@ router.get('/getrooms/:date', async (req, res) => {
             FROM bgc_rooms r
             ORDER BY r.room_description;
         `;
-        const rooms = await db.query(sql, [date]);
+        const [rooms] = await db.query(sql, [date]);
         
         // MySQL returns the JSON as a string or object depending on your driver
         const formattedRooms = rooms.map(room => ({
@@ -432,7 +432,7 @@ router.post('/room-reserve', async (req, res) => {
     const { room_id, date_from, date_to, added_by } = req.body;
     try {
         const sql = `INSERT INTO bgc_room_reserve (room_id, date_from, date_to, added_by) VALUES (?, ?, ?, ?)`;
-        const result = await db.query(sql, [room_id, date_from, date_to, added_by]);
+        const [result] = await db.query(sql, [room_id, date_from, date_to, added_by]);
         res.json({ success: true, id: result.insertId });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
@@ -456,7 +456,7 @@ router.delete('/delete-room-reserve/:id', async (req, res) => {
         // MySQL uses ? placeholder
         const sql = `DELETE FROM bgc_room_reserve WHERE id = ?`;
         
-        const result = await db.query(sql, [id]);
+        const [result] = await db.query(sql, [id]);
 
         // In MySQL, result.affectedRows tells you if the row existed and was deleted
         if (result.affectedRows === 0) {
