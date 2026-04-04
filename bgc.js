@@ -86,7 +86,7 @@ app.use(function(req, res, next) {
 */
 
 var allowCrossDomain = function(req, res, next) {
-    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Origin', 'https://ccfbgc.org'); // restrict it to the required domain
     res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
     res.header('Access-Control-Allow-Headers', 'Content-Type,Origin, X-Requested-With, Content-Type, Accept, Authorization');
     next();
@@ -140,143 +140,143 @@ let userMode, userName
 
 let connectedSockets = []
 
-//listen socket.io
-io.on('connection', (socket) => {
+// //listen socket.io
+// io.on('connection', (socket) => {
 
-    if(socket.handshake.query.userName){
-		const userNames = socket.handshake.query.userName
-		const userNamex = JSON.parse(userNames)
-		userName = userNamex.token
+//     if(socket.handshake.query.userName){
+// 		const userNames = socket.handshake.query.userName
+// 		const userNamex = JSON.parse(userNames)
+// 		userName = userNamex.token
 		
-		userMode = userNamex.mode
-		console.log('mode==', userMode)
+// 		userMode = userNamex.mode
+// 		console.log('mode==', userMode)
 				
-		connectedSockets.push({
-				socketId: socket.id,
-				mode: userMode,
-				userName
-		})		
+// 		connectedSockets.push({
+// 				socketId: socket.id,
+// 				mode: userMode,
+// 				userName
+// 		})		
 				
-		nLogged++
+// 		nLogged++
 				
-		console.log('*** BGC SOCKET.IO SERVICES STARTED ***\n', connectedSockets)	
+// 		console.log('*** BGC SOCKET.IO SERVICES STARTED ***\n', connectedSockets)	
 		
-		console.log(`BGC USERS Connected ${nLogged}`)
+// 		console.log(`BGC USERS Connected ${nLogged}`)
 		
 		
-	}//============eif
+// 	}//============eif
 
 
-    socket.on('sendToOwner', (data) => {
+//     socket.on('sendToOwner', (data) => {
         
-        let xdata = data
+//         let xdata = data
         
-        const finder = connectedSockets.findIndex( x => x.mode=='4') //find the boss
+//         const finder = connectedSockets.findIndex( x => x.mode=='4') //find the boss
         
-        //console.log(finder)
+//         //console.log(finder)
 
-        if(finder >= 0){ //if found
-            //give message to the intended client
-            socket.to( connectedSockets[finder].socketId).emit('xinit', 'update chart!' )
+//         if(finder >= 0){ //if found
+//             //give message to the intended client
+//             socket.to( connectedSockets[finder].socketId).emit('xinit', 'update chart!' )
 
-            console.log('@@@initially found opmgr', connectedSockets[finder].socketId)
-        }
+//             console.log('@@@initially found opmgr', connectedSockets[finder].socketId)
+//         }
 
-        if(finder ==-1){
-            //if intended client not connected, send back message to user sender
-            socket.emit('noconnect', data)
-        }
+//         if(finder ==-1){
+//             //if intended client not connected, send back message to user sender
+//             socket.emit('noconnect', data)
+//         }
 
-        /*
-        //loop thru array socket
-        connectedSockets.forEach(socketInfo => {
-            if(parseInt(socketInfo.mode)===2){
+//         /*
+//         //loop thru array socket
+//         connectedSockets.forEach(socketInfo => {
+//             if(parseInt(socketInfo.mode)===2){
 
-               socket.to( socketInfo.socketId ).emit('updatechart', data )
+//                socket.to( socketInfo.socketId ).emit('updatechart', data )
 
-               console.log(`Fired Event 'updatechart' to USER: ${socketInfo.userName}, ID: ${socketInfo.socketId }`)
-            }//eif
-        })
-            */
-        // const finder = connectedSockets.findIndex( x => x.mode===5)
+//                console.log(`Fired Event 'updatechart' to USER: ${socketInfo.userName}, ID: ${socketInfo.socketId }`)
+//             }//eif
+//         })
+//             */
+//         // const finder = connectedSockets.findIndex( x => x.mode===5)
         
-        // //console.log(finder)
+//         // //console.log(finder)
 
-        // if(finder >= 0){ //if found
-        //     //give message to the intended client
-        //     socket.to( connectedSockets[finder].socketId).emit('loadchart', data )
-        //     console.log('found opmgr', connectedSockets[finder].socketId)
-        // }
+//         // if(finder >= 0){ //if found
+//         //     //give message to the intended client
+//         //     socket.to( connectedSockets[finder].socketId).emit('loadchart', data )
+//         //     console.log('found opmgr', connectedSockets[finder].socketId)
+//         // }
 
-        // if(finder ==-1){
-        //     //if intended client not connected, send back message to user sender
-        //     socket.emit('noconnect', data)
-        // }
-    })//end listener	
+//         // if(finder ==-1){
+//         //     //if intended client not connected, send back message to user sender
+//         //     socket.emit('noconnect', data)
+//         // }
+//     })//end listener	
 
-    socket.on('init', (data) => {
-        let xdata = data
+//     socket.on('init', (data) => {
+//         let xdata = data
         
-        const finder = connectedSockets.findIndex( x => x.mode==5)
+//         const finder = connectedSockets.findIndex( x => x.mode==5)
         
-        //console.log(finder)
+//         //console.log(finder)
 
-        if(finder >= 0){ //if found
-            //give message to the intended client
-            socket.to( connectedSockets[finder].socketId).emit('xinit', data )
-            console.log('@@@initially found opmgr', connectedSockets[finder].socketId)
-        }
+//         if(finder >= 0){ //if found
+//             //give message to the intended client
+//             socket.to( connectedSockets[finder].socketId).emit('xinit', data )
+//             console.log('@@@initially found opmgr', connectedSockets[finder].socketId)
+//         }
 
-        if(finder ==-1){
-            //if intended client not connected, send back message to user sender
-            socket.emit('noconnect', data)
-        }
-    })//end listener	
-	//console.log('*** SOCKET.IO SERVICES STARTED ***')
+//         if(finder ==-1){
+//             //if intended client not connected, send back message to user sender
+//             socket.emit('noconnect', data)
+//         }
+//     })//end listener	
+// 	//console.log('*** SOCKET.IO SERVICES STARTED ***')
 
-    //nLogged++
+//     //nLogged++
 
-    //preliminary logged info
-    io.emit('logged',`User connected: ${nLogged }`)
+//     //preliminary logged info
+//     io.emit('logged',`User connected: ${nLogged }`)
     
-    console.log(`user connected ${nLogged}`)
-    /*
-    console.log('=====CONNECTING IO SOCKET.IO=====')
+//     console.log(`user connected ${nLogged}`)
+//     /*
+//     console.log('=====CONNECTING IO SOCKET.IO=====')
 
-    listClient.push({"id":socket.id })
-    nLogged++
+//     listClient.push({"id":socket.id })
+//     nLogged++
 
-    //console.log('NUMBER OF LOGGED USERS : ', nLogged)
-    io.emit('logged',`NUMBER OF USERS: ${nLogged }`)
+//     //console.log('NUMBER OF LOGGED USERS : ', nLogged)
+//     io.emit('logged',`NUMBER OF USERS: ${nLogged }`)
 
-    Object.keys(  listClient ).forEach(key => {
-        console.log(`**${listClient[key].id} connected` )
-    })
-    */
-    //if user disconnect
-    socket.on('disconnect', (id) => {
-		console.log('disconnecting....')
+//     Object.keys(  listClient ).forEach(key => {
+//         console.log(`**${listClient[key].id} connected` )
+//     })
+//     */
+//     //if user disconnect
+//     socket.on('disconnect', (id) => {
+// 		console.log('disconnecting....')
 				
-			nLogged--
+// 			nLogged--
 		
-            if(nLogged <= 0){
-                nLogged = 0
-            }
-		//const togo = connectedSockets.find(o=>o.socketId === socket.id)
+//             if(nLogged <= 0){
+//                 nLogged = 0
+//             }
+// 		//const togo = connectedSockets.find(o=>o.socketId === socket.id)
         
-        const togo = connectedSockets.findIndex( x => x.socketId === socket.id)
+//         const togo = connectedSockets.findIndex( x => x.socketId === socket.id)
         
-        connectedSockets.splice(togo, 1 )
+//         connectedSockets.splice(togo, 1 )
 
-        console.log( connectedSockets)
+//         console.log( connectedSockets)
 
-        console.log(`NEWLY CREATED ** BGC's User Connected ${nLogged}`)
-        //io.emit('logged',`Zonked connected: ${nLogged }`)
-    })
+//         console.log(`NEWLY CREATED ** BGC's User Connected ${nLogged}`)
+//         //io.emit('logged',`Zonked connected: ${nLogged }`)
+//     })
 
   
     
-})//end io conn
+// })//end io conn
 //====== server listen to por
 
 //orig ->const port = process.env.PORT||10000
