@@ -177,7 +177,7 @@ router.post('/send-update', (req, res) => {
    const { id, user, ministry } = req.body;
 
     // Trigger ONLY to that user's specific channel
-    pusher.trigger(`user-${targetId}`, "personal-alert", {
+    pusher.trigger(`user-${id}`, "personal-alert", {
         message: msg,
         sender: "System"
     });
