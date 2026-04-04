@@ -175,18 +175,19 @@ let clients = [];
 
 // 1. Endpoint for clients to "subscribe" to notifications
 router.get('/notifications', (req, res) => {
-    // 1. Mandatory SSE Headers
+    // FORCE CORS headers specifically for this route
+    res.setHeader('Access-Control-Allow-Origin', 'https://ccfbgc.org');
+    res.setHeader('Access-Control-Allow-Credentials', 'false'); // Matches withCredentials: false
+
     res.writeHead(200, {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
-        'X-Accel-Buffering': 'no' // <--- CRITICAL for Hostinger
+        'X-Accel-Buffering': 'no' 
     });
 
-    // 2. Send an immediate "comment" (starts with :) 
-    // This tells the browser: "We are connected, just waiting for data."
+    // Send initial padding/heartbeat
     res.write(':\n\n'); 
-
     const clientId = Date.now();
     const newClient = { id: clientId, res };
     clients.push(newClient);
@@ -542,7 +543,7 @@ router.post('/update-entry', (req, res) => {
             });
         }
     }, 20000); // 20 seconds is perfect for Hostinger
-    
+
 	return router;
 }
 //module.exports = router
