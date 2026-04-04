@@ -103,6 +103,7 @@ router.get('/loginpost/:uid/:pwd', async (req, res) => {
         expiresIn: '7d' 
     });
     
+    //return success!
     return res.json({
         found: true,
         data: rows,
@@ -133,6 +134,84 @@ router.get('/loginpost/:uid/:pwd', async (req, res) => {
 });
 
 
+//====HELPERS
+function requireAuth(req, res, next) {
+    const h = req.headers.authorization || '';
+    const token = h.startsWith('Bearer ') ? h.slice(7) : null;
+    if (!token) return res.status(401).json({ success: false });
+
+    try { req.auth = jwt.verify(token, process.env.JWT_SECRET); next(); }
+    catch { return res.status(401).json({ success: false }); }
+}
+
+//called from when user is logged in//
+router.get('/events', requireAuth, async (req, res) => {
+    const after = Number(req.query.after || 0);
+    const { userId } = req.auth;
+
+    const [rows] = await db.query(
+    `SELECT id, type, payload, created_at
+    FROM bgc_events
+    WHERE id > ?
+    AND (target_user_id = ? OR target_user_id IS NULL)
+    ORDER BY id ASC
+    LIMIT 100`,
+    [after, userId]
+    );
+
+    res.json({ success: true, events: rows });
+});
+
+async function emitEvent({ target_user_id = null, type, payload = null }) {
+    await db.query(
+    `INSERT INTO bgc_events (target_user_id, type, payload) VALUES (?, ?, ?)`,
+    [target_user_id, type, payload ? JSON.stringify(payload) : null]
+    );
+}
+
+//==== SSE SERVER-SENT EVENTS
+let clients = [];
+
+// 1. Endpoint for clients to "subscribe" to notifications
+router.get('/notifications', (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    // Add this client to our list
+    const clientId = Date.now();
+    const newClient = { id: clientId, res };
+    clients.push(newClient);
+
+     // ✅ Clean log: Shows the total number and the new ID
+    console.log(`New client: ${clientId}. Total: ${clients.length}`);
+
+
+    // Remove client when they disconnect
+    req.on('close', () => {
+        clients = clients.filter(c => c.id !== clientId);
+        //clients = clients.filter(c => c.id !== clientId);
+        // ✅ Clean log: Shows who left and current count
+        console.log(`Client ${clientId} disconnected. Remaining: ${clients.length}`);
+    
+    });
+});
+
+// 2. Logic to notify everyone when an entry is updated
+router.post('/update-entry', (req, res) => {
+    // ... your logic to update the database ...
+    
+    const message = { type: 'UPDATE_DETECTED', data: req.body };
+    
+    // Notify all connected clients
+    clients.forEach(client => 
+        client.res.write(`data: ${JSON.stringify(message)}\n\n`)
+    );
+    
+    res.status(200).send("Updated and Notified!");
+});
+
+//===============================================ENDING SSE's =========================
     //=== SAVE PROJECT TO MAP pgsql DATABASE 
     const upload = multer({ storage: multer.memoryStorage() }).any();
     const os = require('os');
