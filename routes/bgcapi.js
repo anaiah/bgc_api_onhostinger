@@ -67,6 +67,16 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 const xlsx = require('xlsx');
 
+const Pusher = require("pusher");
+
+const pusher = new Pusher({
+  appId: "2136889",
+  key: "e7e1396c6d903263f9a9",
+  secret: "f74c1d97d6c62536d941",
+  cluster: "ap1",
+  useTLS: true
+});
+
 module.exports = (io) => {
 
 //========login post
@@ -134,6 +144,19 @@ router.get('/loginpost/:uid/:pwd', async (req, res) => {
   }
 });
 
+//================THIS IS FOR "PUSHER" REALTIME NOTIFICATIONS
+// YOUR UPDATE ROUTE
+router.post('/update-entry', (req, res) => {
+    // ... your database logic ...
+
+    // TRIGGER THE NOTIFICATION
+    pusher.trigger("bgc-channel", "entry-updated", {
+        message: "Data was updated!",
+        id: req.body.id
+    });
+
+    res.json({ success: true });
+});
 
 //====HELPERS
 function requireAuth(req, res, next) {
