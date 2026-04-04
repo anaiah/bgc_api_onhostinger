@@ -145,18 +145,41 @@ router.get('/loginpost/:uid/:pwd', async (req, res) => {
 });
 
 //================THIS IS FOR "PUSHER" REALTIME NOTIFICATIONS
+let clients = [];
+
 // YOUR UPDATE ROUTE
 router.post('/update-entry', (req, res) => {
-    // ... your database logic ...
+    const { id, user, ministry } = req.body;
 
-    // TRIGGER THE NOTIFICATION
+    // 1. Add user to the array (only if they aren't already there)
+    const exists = loggedClients.find(c => c.id === id);
+    if (!exists) {
+        loggedClients.push({ id, user, ministry, loginTime: new Date() });
+    }
+
+    // 2. Console log your "Who is online" list
+    console.log("--- Active Users ---");
+    console.table(loggedClients); // console.table looks beautiful in Node logs!
+    console.log(`Total Logged In: ${loggedClients.length}`);
+
+    // 3. Trigger Pusher so EVERYONE sees the new person
     pusher.trigger("bgc-channel", "entry-updated", {
-        message: "Data was updated!",
-        id: req.body.id
+        message: `${user} from ${ministry} just joined!`,
+        activeCount: loggedClients.length
     });
 
+    res.json({ success: true, count: loggedClients.length });
+
+});
+
+//========PUSHER LOGOUT
+router.post('/logout', (req, res) => {
+    const { id } = req.body;
+    loggedClients = loggedClients.filter(c => c.id !== id);
+    console.log(`User ${id} logged out. Total: ${loggedClients.length}`);
     res.json({ success: true });
 });
+
 
 //====HELPERS
 function requireAuth(req, res, next) {
@@ -194,47 +217,47 @@ async function emitEvent({ target_user_id = null, type, payload = null }) {
 }
 
 //==== SSE SERVER-SENT EVENTS
-let clients = [];
 
-// 1. Endpoint for clients to "subscribe" to notifications
-router.get('/notifications', (req, res) => {
-    // FORCE CORS headers specifically for this route
-    res.setHeader('Access-Control-Allow-Origin', 'https://ccfbgc.org');
-    res.setHeader('Access-Control-Allow-Credentials', 'false'); // Matches withCredentials: false
 
-    res.writeHead(200, {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-        'X-Accel-Buffering': 'no' 
-    });
+// // 1. Endpoint for clients to "subscribe" to notifications
+// router.get('/notifications', (req, res) => {
+//     // FORCE CORS headers specifically for this route
+//     res.setHeader('Access-Control-Allow-Origin', 'https://ccfbgc.org');
+//     res.setHeader('Access-Control-Allow-Credentials', 'false'); // Matches withCredentials: false
 
-    // Send initial padding/heartbeat
-    res.write(':\n\n'); 
-    const clientId = Date.now();
-    const newClient = { id: clientId, res };
-    clients.push(newClient);
-    console.log(`New client: ${clientId}. Total: ${clients.length}`);
+//     res.writeHead(200, {
+//         'Content-Type': 'text/event-stream',
+//         'Cache-Control': 'no-cache',
+//         'Connection': 'keep-alive',
+//         'X-Accel-Buffering': 'no' 
+//     });
 
-    req.on('close', () => {
-        clients = clients.filter(c => c.id !== clientId);
-        console.log(`Client ${clientId} left. Total: ${clients.length}`);
-    });
-});
+//     // Send initial padding/heartbeat
+//     res.write(':\n\n'); 
+//     const clientId = Date.now();
+//     const newClient = { id: clientId, res };
+//     clients.push(newClient);
+//     console.log(`New client: ${clientId}. Total: ${clients.length}`);
 
-// 2. Logic to notify everyone when an entry is updated
-router.post('/update-entry', (req, res) => {
-    // ... your logic to update the database ...
+//     req.on('close', () => {
+//         clients = clients.filter(c => c.id !== clientId);
+//         console.log(`Client ${clientId} left. Total: ${clients.length}`);
+//     });
+// });
+
+// // 2. Logic to notify everyone when an entry is updated
+// router.post('/update-entry', (req, res) => {
+//     // ... your logic to update the database ...
     
-    const message = { type: 'UPDATE_DETECTED', data: req.body };
+//     const message = { type: 'UPDATE_DETECTED', data: req.body };
     
-    // Notify all connected clients
-    clients.forEach(client => 
-        client.res.write(`data: ${JSON.stringify(message)}\n\n`)
-    );
+//     // Notify all connected clients
+//     clients.forEach(client => 
+//         client.res.write(`data: ${JSON.stringify(message)}\n\n`)
+//     );
     
-    res.status(200).send("Updated and Notified!");
-});
+//     res.status(200).send("Updated and Notified!");
+// });
 
 //===============================================ENDING SSE's =========================
     //=== SAVE PROJECT TO MAP pgsql DATABASE 
