@@ -175,33 +175,26 @@ let clients = [];
 
 // 1. Endpoint for clients to "subscribe" to notifications
 router.get('/notifications', (req, res) => {
-
-    res.setHeader('Access-Control-Allow-Origin', 'https://ccfbgc.org');
-
-     res.writeHead(200, {
+    // 1. Mandatory SSE Headers
+    res.writeHead(200, {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
-        // Add this line to disable proxy buffering
-        'X-Accel-Buffering': 'no' 
+        'X-Accel-Buffering': 'no' // <--- CRITICAL for Hostinger
     });
 
-    // Add this client to our list
+    // 2. Send an immediate "comment" (starts with :) 
+    // This tells the browser: "We are connected, just waiting for data."
+    res.write(':\n\n'); 
+
     const clientId = Date.now();
     const newClient = { id: clientId, res };
     clients.push(newClient);
-
-     // ✅ Clean log: Shows the total number and the new ID
     console.log(`New client: ${clientId}. Total: ${clients.length}`);
 
-
-    // Remove client when they disconnect
     req.on('close', () => {
         clients = clients.filter(c => c.id !== clientId);
-        //clients = clients.filter(c => c.id !== clientId);
-        // ✅ Clean log: Shows who left and current count
-        console.log(`Client ${clientId} disconnected. Remaining: ${clients.length}`);
-    
+        console.log(`Client ${clientId} left. Total: ${clients.length}`);
     });
 });
 
@@ -536,6 +529,20 @@ router.post('/update-entry', (req, res) => {
         res.json({status:true})
     })
 
+      // --- PASTE THE HEARTBEAT HERE ---
+    setInterval(() => {
+        if (clients && clients.length > 0) {
+            clients.forEach(client => {
+                try {
+                    // Send the keep-alive comment to every connected user
+                    client.res.write(': keep-alive\n\n');
+                } catch (err) {
+                    console.error("Error sending heartbeat to client", client.id);
+                }
+            });
+        }
+    }, 20000); // 20 seconds is perfect for Hostinger
+    
 	return router;
 }
 //module.exports = router
