@@ -177,8 +177,8 @@ router.post('/send-update', (req, res) => {
    const { id, user, ministry } = req.body;
 
     // Trigger ONLY to that user's specific channel
-    pusher.trigger(`user-${id}`, "personal-alert", {
-        message: `Hello ${user}! This is a personal update just for you from the BGC system!`,
+    pusher.trigger(`user-owners`, "personal-alert", {
+        message: `Hello! ${user} has update just for you from the BGC system!`,
         sender: "System"
     });
 
@@ -273,11 +273,11 @@ async function emitEvent({ target_user_id = null, type, payload = null }) {
 // });
 
 //===============================================ENDING SSE's =========================
-    //=== SAVE PROJECT TO MAP pgsql DATABASE 
-    const upload = multer({ storage: multer.memoryStorage() }).any();
-    const os = require('os');
-    
-    let tempFilePath = '';
+//=== SAVE PROJECT TO MAP pgsql DATABASE 
+const upload = multer({ storage: multer.memoryStorage() }).any();
+const os = require('os');
+
+let tempFilePath = '';
 
 
     //==== insert headcount in bgc =====//
