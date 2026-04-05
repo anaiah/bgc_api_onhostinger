@@ -213,7 +213,7 @@ router.get('/get-target-grid', async (req, res) => {
                 SUM(CASE WHEN MONTH(h.date_added) = 11 THEN h.headcount ELSE 0 END) AS 'Nov',
                 SUM(CASE WHEN MONTH(h.date_added) = 12 THEN h.headcount ELSE 0 END) AS 'Dec'
             FROM bgc_targets t
-            LEFT JOIN bgc_headcount h ON t.ministry_segment = h.ministry_segment 
+                LEFT JOIN bgc_headcount h ON t.ministry_segment COLLATE utf8mb4_unicode_ci = h.ministry_segment COLLATE utf8mb4_unicode_ci
                 AND YEAR(h.date_added) = t.fiscal_year
             WHERE t.fiscal_year = YEAR(CURDATE())
             GROUP BY t.ministry_segment, t.target_value;
