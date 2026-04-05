@@ -193,6 +193,42 @@ router.post('/logout', (req, res) => {
     res.json({ success: true });
 });
 
+//========GRID.JS =================//
+router.get('/get-target-grid', async (req, res) => {
+    try {
+        const sql = `
+            SELECT 
+                t.target_value AS 'FY Target',
+                t.ministry_segment AS 'Ministry',
+                SUM(CASE WHEN MONTH(h.date_added) = 1 THEN h.headcount ELSE 0 END) AS 'Jan',
+                SUM(CASE WHEN MONTH(h.date_added) = 2 THEN h.headcount ELSE 0 END) AS 'Feb',
+                SUM(CASE WHEN MONTH(h.date_added) = 3 THEN h.headcount ELSE 0 END) AS 'Mar',
+                SUM(CASE WHEN MONTH(h.date_added) = 4 THEN h.headcount ELSE 0 END) AS 'Apr',
+                SUM(CASE WHEN MONTH(h.date_added) = 5 THEN h.headcount ELSE 0 END) AS 'May',
+                SUM(CASE WHEN MONTH(h.date_added) = 6 THEN h.headcount ELSE 0 END) AS 'Jun',
+                SUM(CASE WHEN MONTH(h.date_added) = 7 THEN h.headcount ELSE 0 END) AS 'Jul',
+                SUM(CASE WHEN MONTH(h.date_added) = 8 THEN h.headcount ELSE 0 END) AS 'Aug',
+                SUM(CASE WHEN MONTH(h.date_added) = 9 THEN h.headcount ELSE 0 END) AS 'Sep',
+                SUM(CASE WHEN MONTH(h.date_added) = 10 THEN h.headcount ELSE 0 END) AS 'Oct',
+                SUM(CASE WHEN MONTH(h.date_added) = 11 THEN h.headcount ELSE 0 END) AS 'Nov',
+                SUM(CASE WHEN MONTH(h.date_added) = 12 THEN h.headcount ELSE 0 END) AS 'Dec'
+            FROM bgc_targets t
+            LEFT JOIN bgc_headcount h ON t.ministry_segment = h.ministry_segment 
+                AND YEAR(h.date_added) = t.fiscal_year
+            WHERE t.fiscal_year = YEAR(CURDATE())
+            GROUP BY t.ministry_segment, t.target_value;
+        `;
+        const [rows] = await db.query(sql);
+        
+        const columns = rows.length > 0 ? Object.keys(rows[0]) : [];
+        const data = rows.map(row => Object.values(row));
+        
+        res.json({ ok: true, columns, data });
+    } catch (err) {
+        res.status(500).json({ ok: false, error: err.message });
+    }
+});
+
 
 //====HELPERS
 function requireAuth(req, res, next) {
@@ -230,7 +266,6 @@ async function emitEvent({ target_user_id = null, type, payload = null }) {
 }
 
 //==== SSE SERVER-SENT EVENTS
-
 
 // // 1. Endpoint for clients to "subscribe" to notifications
 // router.get('/notifications', (req, res) => {
@@ -278,7 +313,6 @@ const upload = multer({ storage: multer.memoryStorage() }).any();
 const os = require('os');
 
 let tempFilePath = '';
-
 
     //==== insert headcount in bgc =====//
 router.post('/saveattendance/:id/:ministry/:ministryId', async (req, res) => {
