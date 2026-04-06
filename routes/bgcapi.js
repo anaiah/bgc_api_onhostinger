@@ -241,6 +241,8 @@ router.post('/save-target', async (req, res) => {
             ON DUPLICATE KEY UPDATE target_value = VALUES(target_value)
         `;
         await db.query(sql, [fiscal_year, ministry_segment, target_value]);
+        console.log(`Target saved for ${ministry_segment} (${fiscal_year}): ${target_value}`);
+        
         res.json({ ok: true });
     } catch (err) {
         res.status(500).json({ ok: false, error: err.message });
