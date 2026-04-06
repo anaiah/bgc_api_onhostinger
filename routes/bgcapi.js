@@ -233,16 +233,19 @@ router.get('/get-target-grid', async (req, res) => {
 
 //===============SAVE FISCAL YEAR TARGET==============//
 router.post('/save-target', async (req, res) => {
-    const { fiscal_year, ministry_segment, target_value } = req.body;
+    const {  ministry_segment, target_value } = req.body;
+    const fiscalYear = new Date().getFullYear(); 
+
     try {
         const sql = `
             INSERT INTO bgc_targets (fiscal_year, ministry_segment, target_value)
             VALUES (?, ?, ?)
             ON DUPLICATE KEY UPDATE target_value = VALUES(target_value)
         `;
-        await db.query(sql, [fiscal_year, ministry_segment, target_value]);
-        console.log(`Target saved for ${ministry_segment} (${fiscal_year}): ${target_value}`);
+        await db.query(sql, [fiscalYear, ministry_segment, target_value]);
         
+        console.log(`Target saved for ${ministry_segment} (${fiscalYear}): ${target_value}`);
+
         res.json({ ok: true });
     } catch (err) {
         res.status(500).json({ ok: false, error: err.message });
