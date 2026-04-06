@@ -196,10 +196,12 @@ router.post('/logout', (req, res) => {
 //========GRID.JS =================//
 router.get('/get-target-grid', async (req, res) => {
     try {
+
+        //the field is important in order, coz this is the order of columns in the grid.js, so if you change the order here, change it also in the grid.js column definition
         const sql = `
             SELECT 
+                t.ministry_segment AS 'Ministry',    
                 t.target_value AS 'FY Target',
-                t.ministry_segment AS 'Ministry',
                 SUM(CASE WHEN MONTH(h.date_added) = 1 THEN h.headcount ELSE 0 END) AS 'Jan',
                 SUM(CASE WHEN MONTH(h.date_added) = 2 THEN h.headcount ELSE 0 END) AS 'Feb',
                 SUM(CASE WHEN MONTH(h.date_added) = 3 THEN h.headcount ELSE 0 END) AS 'Mar',
