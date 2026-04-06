@@ -229,6 +229,22 @@ router.get('/get-target-grid', async (req, res) => {
     }
 });
 
+//===============SAVE FISCAL YEAR TARGET==============//
+router.post('/save-target', async (req, res) => {
+    const { fiscal_year, ministry_segment, target_value } = req.body;
+    try {
+        const sql = `
+            INSERT INTO bgc_targets (fiscal_year, ministry_segment, target_value)
+            VALUES (?, ?, ?)
+            ON DUPLICATE KEY UPDATE target_value = VALUES(target_value)
+        `;
+        await db.query(sql, [fiscal_year, ministry_segment, target_value]);
+        res.json({ ok: true });
+    } catch (err) {
+        res.status(500).json({ ok: false, error: err.message });
+    }
+});
+
 
 //====HELPERS
 function requireAuth(req, res, next) {

@@ -22,6 +22,7 @@ const config = {
     connectTimeout: 10000, 
     enableKeepAlive: true, 
     charset: 'utf8mb4', 
+    decimalNumbers: true
 
 }; 
 
