@@ -177,7 +177,7 @@ router.post('/send-update', (req, res) => {
    const { id, user, ministry } = req.body;
 
     // Trigger ONLY to that user's specific channel
-    pusher.trigger(`user-owners`, "personal-alert", {
+    pusher.trigger(`users-owners`, "personal-alert", {
         message: `Hello! ${user} has update just for you from the BGC system!`,
         sender: "System"
     });
@@ -243,7 +243,7 @@ router.post('/save-target', async (req, res) => {
             ON DUPLICATE KEY UPDATE target_value = VALUES(target_value)
         `;
         await db.query(sql, [fiscalYear, ministry_segment, target_value]);
-        
+
         console.log(`Target saved for ${ministry_segment} (${fiscalYear}): ${target_value}`);
 
         res.json({ ok: true });
