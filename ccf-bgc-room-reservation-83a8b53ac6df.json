@@ -1,13 +1,1 @@
-{
-  "type": "service_account",
-  "project_id": "ccf-bgc-room-reservation",
-  "private_key_id": "83a8b53ac6df43119b8188f0fc5194ce9a80b817",
-  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCXk+vpkvQauXlz\ne1Ve4FhUuzvAhRIEVFDYCIexCV3tPsaEHLJjP4wWqGpiTvRPdawL0IMgE4rWS3ut\nudJDavkbII20C9Sn/bfzTCJ7LnNIqOBpbiL+Pr/X4uA9R8ju8sjlmXlNRl3CHXIX\nr3F1wt2iv1bWlDteCW63kiKN4aDx1U4LmUq/VstwBYEQiteBRf0cODyQODtmIqTn\nYBGU21cSmV23sdCtLO5AoWoERHhS9TkrRFs2C/x8XE9W1DQkinug4LW58CXlb1lz\ndxy10AtCihZgAPMiyjBggNLdj5osGdhOTwvNhQbLaF2OUgdgf1+PWdCWmJRGktXw\n639YlL2vAgMBAAECggEABwpyJ3v4MyzKxtUQYFAJdySChqA0kXDp/giMM2ppxRub\n+waeOEMuZ0ShbgZlQMxvFm/NqqkqhmbxMsU/G0fJYTvM36a6odo30WkhVn/c3Dld\njmgoRfXb0W2SpVlDrLdbiTBTOx/gOqRFgj++N6ftxaG5QrRix/mmMLuGavkmq06Y\nr0mZvWe8mE5orDcmgZIe8kVUbEtKy4hfQ4kjCG2Zz0e7eeorGvbTzsKodJxY+vgk\ngwGhG9O9LNLc3kBZFeJO0LeB3axfSf3ipyobHueye+G0i1UyMkupJdAqb5ZWRHBk\njEn41lebJwW4GBY/366ckqFe4570evYXvoRkIKv6gQKBgQDIXVhzXPeKSUZGJrqC\nKwvEcHi3yEzCiz41FbJ4HvUuslWJj38QfLZtMVPxjn90ZxuZTBAIpXe18+Mk2sBS\nl1QfoWMVid61eP5s3Nmf4Um5LsLpkaNCS12qpKryBLxkxdxCogoimrPvPqaLqviB\nAZZ3BigPZ6o8i5aZYGhot05ybwKBgQDBqqFLldkkDRTBfvHcJY0lNk/30erXoJWF\n4FgYT7emfnFgvfMfjtbYUS016zcqbToxDoEGEVt2EP0nGDBk9GnZsz2Qac3Y58r3\n+HQ5SOBJIaM/a+E0Fpc9Gohwq0glRahI3wBp9EOFBX5maj3lERTrMJSbGypG0VKx\nifVI5XMIwQKBgQCnxvJv96MY2u7Lg1ad9SmvXnbXfhQ4u5xlmzuMtm+coJxbyhse\nVS/1E181YJt9f3Fu1nB+rQAnDohfrgVpo2o/6kYsHPyufRifU/evl1jChlOUfe11\nb+KJJ8Y1Tp3qzHv6F/HgtCaD6bRQM+RPMmMqW69j5ux4MnLzD/Wd6hD4ZQKBgBfG\nB2jM60vmoy6hk7UPkwUHZseoKCjyGIjHomjRmFzC1s4mYyrzkOIbDO66ghoeMG+H\nNUV2agDTUxAygvZRnpDP1PXeVxuSULMh97p0fLvdejm1135aa5RfpnIWRJP2uhK/\n9UAMcSFqLDsMPa7Z6vR4ETX9HrJ0za7nnYmmSPnBAoGACN4Fe7hQI4/adPglcnTM\nw48adYLHRcvtS90iLAz5mjm92yorENq679n/EfXZO1StEPT8j6s/4K7thU3ifuRT\n3dJvMiuJkUeuuOdAMd5YnnEKfT5OTmZ+P5YhbdNjLgckQL9sHvGgld1g3eUBW5SW\nOcQdfXih6SzhfzSRl09PLo4=\n-----END PRIVATE KEY-----\n",
-  "client_email": "ccf-bgc-room-reservation@ccf-bgc-room-reservation.iam.gserviceaccount.com",
-  "client_id": "114310991837108905495",
-  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-  "token_uri": "https://oauth2.googleapis.com/token",
-  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/ccf-bgc-room-reservation%40ccf-bgc-room-reservation.iam.gserviceaccount.com",
-  "universe_domain": "googleapis.com"
-}
+
