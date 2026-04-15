@@ -480,8 +480,7 @@ const { google } = require('googleapis');
 const path = require('path');
 
 // Ensure the path is correct for api.js inside the /route folder
-const keyFile = path.join(__dirname, 'ccf-bgc-room-reservation-83a8b53ac6df.json');
-const keys = require(keyFile);
+const keys = JSON.parse(process.env.GOOGLE_JSON_KEY);
 
 const authClient = new google.auth.JWT({
     email: keys.client_email,
@@ -491,6 +490,7 @@ const authClient = new google.auth.JWT({
 
 const calendar = google.calendar({ version: 'v3', auth: authClient });
 const CALENDAR_ID = 'anaiahdaniel@gmail.com'; 
+
 
 // ************************** THIS IS THE ACTUAL ROOM *******************************//
 router.post('/room-reserve', async (req, res) => {
