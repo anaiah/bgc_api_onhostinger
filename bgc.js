@@ -119,7 +119,7 @@ app.get('/',(req, res)=>{
 // const usersRouter = require('./routes/api')(io);
 // app.use('/', usersRouter);
 
-const bgcRouter= require('./routes/bgcapi')(io);
+const bgcRouter= require('./routes/bgcapi');
 app.use('/bgc', bgcRouter);
 
 const cookieParser = require('cookie-parser');

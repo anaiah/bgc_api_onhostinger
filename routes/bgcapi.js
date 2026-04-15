@@ -61,7 +61,7 @@ const mysqls = require('mysql2/promise')
 //=====CLAIMS UPLOAD
 // Set up multer for file uploads
 
-const upload = multer({ storage: multer.memoryStorage() });
+//const upload = multer({ storage: multer.memoryStorage() });
 
 const xlsx = require('xlsx');
 
@@ -75,7 +75,6 @@ const pusher = new Pusher({
   useTLS: true
 });
 
-module.exports = (io) => {
 
 //========login post
 router.get('/loginpost/:uid/:pwd', async (req, res) => {
@@ -663,7 +662,4 @@ router.get('/handshake', async(req,res) => {
 //         });
 //     }
 // }, 20000); // 20 seconds is perfect for Hostinger
-
-	return router;
-}
-//module.exports = router
+module.exports = router
