@@ -1,6 +1,8 @@
 //get express js
 const express = require('express')
 const app = express()
+const cors = require('cors')
+
 
 const bodyParser = require('body-parser')
 
@@ -19,17 +21,6 @@ const server_https = http.createServer( app);
 
 //const { Server } = require('socket.io'); 
 
-//===setting of socket.io
-//const io = new Server(server_https);
-const io = require("socket.io")( server_https, {
-    transports:['websocket','polling'],
-    cors: {
-      origin: "*", //bring back to https://asianowapp.com
-      methods: ["GET", "POST","PUT","DELETE"],
-      //allowedHeaders: ["vantaztic-header"],
-      //credentials: true
-    }
-})
 
 //*********** connect to MySQL ***********//
 const connectToMySql = async () => {
@@ -72,35 +63,12 @@ app.use(bodyParser.urlencoded({extended:false}))
 //=== this is !important for CORS especially for different servers calling====//
 //const allowedOrigins = ["https://app.vantaztic.com","https://app.vantaztic.com","https://osndp1.onrender.com","http://localhost:4001"]
 
-const allowedOrigins = "*"
-/*
-app.use(function(req, res, next) {
-    let origin = req.headers.origin;
-    if (allowedOrigins.includes(origin)) {
-        res.header("Access-Control-Allow-Origin", origin); // restrict it to the required domain
-    }
-    res.header("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
-    next();
-});
-*/
+app.use(cors({
+  origin:'https://ccfbgc.org',
+  methods:['GET','POST','PUT','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization']
 
-var allowCrossDomain = function(req, res, next) {
-    res.header('Access-Control-Allow-Origin', 'https://ccfbgc.org'); // restrict it to the required domain https://ccfbgc.org for localhost accept *
-    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
-    res.header('Access-Control-Allow-Headers', 'Content-Type,Origin, X-Requested-With, Content-Type, Accept, Authorization');
-
-    if(req.method==='OPTIONS'){
-      return res.sendStatus(200);
-    }
-    next();
-}
-
-
-app.use(allowCrossDomain);
-
-const cors = require('cors')
-app.use(cors({origin:'https://ccfbgc.org'}))
+}))
 
 //======== END NODEJS CORS SETTING
 const getRandomPin = (chars, len)=>[...Array(len)].map(
@@ -133,7 +101,7 @@ app.get('/test',(req, res)=>{
 // const usersRouter = require('./routes/api')(io);
 // app.use('/', usersRouter);
 
-const bgcRouter= require('./routes/bgcapi')(io);
+const bgcRouter= require('./routes/bgcapi');
 app.use('/bgc', bgcRouter);
 
 const cookieParser = require('cookie-parser');

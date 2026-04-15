@@ -16,8 +16,6 @@ const app = express()
 
 const cookieParser = require('cookie-parser')
 
-const cors = require('cors')
-
 //===== for pdf
 //const pdf = require('html-pdf')
 const path = require('path')
@@ -51,7 +49,7 @@ const sharp = require('sharp')   // for image manipulate
 const ftpclient = require('scp2')
 
 app.use( cookieParser() )
-app.use( cors())
+
 
 const db  = require('../db')// your pool module
 
