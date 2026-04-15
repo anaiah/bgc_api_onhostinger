@@ -35,3 +35,4 @@ routes/template.js
 db_bak04042k26.js
 ccf*.json
 bgcapi_bak04042k26.js
+routes/ccf*.json
