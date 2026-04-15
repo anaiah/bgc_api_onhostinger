@@ -478,7 +478,8 @@ const { google } = require('googleapis');
 const path = require('path');
 
 // Ensure the path is correct for api.js inside the /route folder
-const keys = JSON.parse(process.env.GOOGLE_JSON_KEY);
+//const keys = JSON.parse(process.env.GOOGLE_JSON_KEY);
+const keys = JSON.parse(Buffer.from(process.env.GOOGLE_JSON_KEY, 'base64').toString('utf-8'));
 
 const authClient = new google.auth.JWT({
     email: keys.client_email,
