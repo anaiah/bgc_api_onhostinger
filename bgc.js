@@ -89,12 +89,18 @@ var allowCrossDomain = function(req, res, next) {
     res.header('Access-Control-Allow-Origin', 'https://ccfbgc.org'); // restrict it to the required domain https://ccfbgc.org for localhost accept *
     res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
     res.header('Access-Control-Allow-Headers', 'Content-Type,Origin, X-Requested-With, Content-Type, Accept, Authorization');
+
+    if(req.method==='OPTIONS'){
+      return res.sendStatus(200);
+    }
     next();
 }
 
 
 app.use(allowCrossDomain);
 
+const cors = require('cors')
+app.use(cors({origin:'https://ccfbgc.org'}))
 
 //======== END NODEJS CORS SETTING
 const getRandomPin = (chars, len)=>[...Array(len)].map(
