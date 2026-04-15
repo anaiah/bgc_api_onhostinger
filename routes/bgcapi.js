@@ -133,14 +133,6 @@ router.get('/loginpost/:uid/:pwd', async (req, res) => {
     console.error('Error:', err);
     return res.status(500).json(xdata);
 
-  } finally {
-    if (conn) {
-      try {
-        await conn.end();
-      } catch (endErr) {
-        console.error('Error closing connection:', endErr);
-      }
-    }
   }
 });
 
@@ -483,18 +475,85 @@ router.get('/getrooms/:date', async (req, res) => {
     }
 });
 
+///===== FOR GOOGLE CALENDAR API ==========//
+const { google } = require('googleapis');
+const path = require('path');
 
-// THIS IS THE ACTUAL ROOM RESERVATION
+// Ensure the path is correct for api.js inside the /route folder
+const keyFile = path.join(__dirname, 'ccf-bgc-room-reservation-83a8b53ac6df.json');
+const keys = require(keyFile);
+
+const authClient = new google.auth.JWT({
+    email: keys.client_email,
+    key: keys.private_key.replace(/\\n/g, '\n'),
+    scopes: ['https://googleapis.com/auth/calendar'] // Fixed: Must be specific
+});
+
+const calendar = google.calendar({ version: 'v3', auth: authClient });
+const CALENDAR_ID = 'anaiahdaniel@gmail.com'; 
+
+// ************************** THIS IS THE ACTUAL ROOM *******************************//
 router.post('/room-reserve', async (req, res) => {
     const { room_id, date_from, date_to, added_by } = req.body;
+
     try {
+        // 1. MySQL Insert
         const sql = `INSERT INTO bgc_room_reserve (room_id, date_from, date_to, added_by) VALUES (?, ?, ?, ?)`;
         const [result] = await db.query(sql, [room_id, date_from, date_to, added_by]);
-        res.json({ success: true, id: result.insertId });
+        const dbId = result.insertId;
+
+        // 2. Google Calendar Sync
+        let googleEventId = null;
+        try {
+            // Force authorization
+            await authClient.authorize();
+
+            const gEvent = await calendar.events.insert({
+                calendarId: CALENDAR_ID,
+                requestBody: {
+                    summary: `Room Booking: ${room_id}`,
+                    description: `Reserved by ${added_by}`,
+                    start: { 
+                        dateTime: new Date(date_from).toISOString(),
+                        timeZone: 'Asia/Manila' 
+                    },
+                    end: { 
+                        dateTime: new Date(date_to).toISOString(),
+                        timeZone: 'Asia/Manila'
+                    },
+                },
+            });
+            
+            googleEventId = gEvent.data.id;
+
+            // 3. Save the Google ID back to your database
+            await db.query(`UPDATE bgc_room_reserve SET google_event_id = ? WHERE id = ?`, [googleEventId, dbId]);
+            
+            console.log("Success! Google Event ID:", googleEventId);
+
+        } catch (gErr) {
+            // This will now show the REAL error (likely 404 if not shared correctly)
+            console.error("Google sync error detail:", gErr.response ? gErr.response.data : gErr.message);
+        }
+
+        res.json({ success: true, id: dbId, syncedToGoogle: !!googleEventId });
+
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }
 });
+
+
+// router.post('/room-reserve', async (req, res) => {
+//     const { room_id, date_from, date_to, added_by } = req.body;
+//     try {
+//         const sql = `INSERT INTO bgc_room_reserve (room_id, date_from, date_to, added_by) VALUES (?, ?, ?, ?)`;
+//         const [result] = await db.query(sql, [room_id, date_from, date_to, added_by]);
+//         res.json({ success: true, id: result.insertId });
+//     } catch (err) {
+//         res.status(500).json({ success: false, error: err.message });
+//     }
+// });
 
 
 // THIS IS FOR DELETION OF BOOKING RECORD
@@ -536,58 +595,59 @@ router.delete('/delete-room-reserve/:id', async (req, res) => {
 });
 
 
-    router.get('/testis', async (req,res) => {
-            console.log('FRING TESTIS IN API.JS')
-            res.status(200).send('ok')
-    })
 
-    //=========FUNCTION TO GET PAGES OF PDF
-    
-    //===test menu-submenu array->json--->
-    router.get('/menu/:grpid', async(req,res)=>{
+router.get('/testis', async (req,res) => {
+        console.log('FRING TESTIS IN API.JS')
+        res.status(200).send('ok')
+})
 
-        try {
-            sql = `SELECT menu,
-                menu_icon,
-                grouplist, 
-                JSON_ARRAYAGG( 
-                JSON_OBJECT( 'sub', submenu, 'icon', submenu_icon, 'href', href )) AS list 
-                FROM asn_menu 
-                WHERE FIND_IN_SET('${req.params.grpid}', grouplist)> 0 
-                GROUP BY menu 
-                ORDER BY sequence;`
-            
-            const [results, fields] = await db.query(sql);
-            
-            res.status(200).json( results )
+//=========FUNCTION TO GET PAGES OF PDF
 
-        } catch (err) {
-            console.error('Error:', err);
-            res.status(500).send('Error occurred');
-        }
+//===test menu-submenu array->json--->
+router.get('/menu/:grpid', async(req,res)=>{
 
-    })
+    try {
+        sql = `SELECT menu,
+            menu_icon,
+            grouplist, 
+            JSON_ARRAYAGG( 
+            JSON_OBJECT( 'sub', submenu, 'icon', submenu_icon, 'href', href )) AS list 
+            FROM asn_menu 
+            WHERE FIND_IN_SET('${req.params.grpid}', grouplist)> 0 
+            GROUP BY menu 
+            ORDER BY sequence;`
+        
+        const [results, fields] = await db.query(sql);
+        
+        res.status(200).json( results )
+
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).send('Error occurred');
+    }
+
+})
 
 
 
-    router.get('/handshake', async(req,res) => {
+router.get('/handshake', async(req,res) => {
 
-        res.json({status:true})
-    })
+    res.json({status:true})
+})
 
-      // --- PASTE THE HEARTBEAT HERE ---
-    setInterval(() => {
-        if (clients && clients.length > 0) {
-            clients.forEach(client => {
-                try {
-                    // Send the keep-alive comment to every connected user
-                    client.res.write(': keep-alive\n\n');
-                } catch (err) {
-                    console.error("Error sending heartbeat to client", client.id);
-                }
-            });
-        }
-    }, 20000); // 20 seconds is perfect for Hostinger
+//   // --- PASTE THE HEARTBEAT HERE ---
+// setInterval(() => {
+//     if (clients && clients.length > 0) {
+//         clients.forEach(client => {
+//             try {
+//                 // Send the keep-alive comment to every connected user
+//                 client.res.write(': keep-alive\n\n');
+//             } catch (err) {
+//                 console.error("Error sending heartbeat to client", client.id);
+//             }
+//         });
+//     }
+// }, 20000); // 20 seconds is perfect for Hostinger
 
 	return router;
 }
