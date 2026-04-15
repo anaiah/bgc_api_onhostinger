@@ -477,15 +477,19 @@ router.get('/getrooms/:date', async (req, res) => {
 const { google } = require('googleapis');
 const path = require('path');
 
-// Ensure the path is correct for api.js inside the /route folder
-//const keys = JSON.parse(process.env.GOOGLE_JSON_KEY);
-const keys = JSON.parse(Buffer.from(process.env.GOOGLE_JSON_KEY, 'base64').toString('utf-8'));
+
+
+const decodedString = Buffer.from(process.env.GOOGLE_JSON_KEY, 'base64').toString('utf-8');
+const sanitizedString = decodedString.replace(/\n/g, '\\n').replace(/\r/g, '');
+
+const keys = JSON.parse(sanitizedString);
 
 const authClient = new google.auth.JWT({
     email: keys.client_email,
-    key: keys.private_key.replace(/\\n/g, '\n'),
-    scopes: ['https://googleapis.com/auth/calendar'] // Fixed: Must be specific
+    key: keys.private_key.replace(/\\n/g, '\n'), // This puts them back correctly for Google
+    scopes: ['https://www.googleapis.com/auth/calendar'] 
 });
+
 
 const calendar = google.calendar({ version: 'v3', auth: authClient });
 const CALENDAR_ID = 'anaiahdaniel@gmail.com'; 
