@@ -1,6 +1,7 @@
 //get express js
 const express = require('express')
 const app = express()
+
 const cors = require('cors')
 
 
@@ -92,6 +93,8 @@ app.use((req, res, next) => {
 
 
 
+
+
 //======== END NODEJS CORS SETTING
 const getRandomPin = (chars, len)=>[...Array(len)].map(
     (i)=>chars[Math.floor(Math.random()*chars.length)]
@@ -112,18 +115,11 @@ app.get('/',(req, res)=>{
     //res.sendFile(path.join(__dirname , 'index.html'))
 })
 
-/*
-app.get('/test',(req, res)=>{
-    res.send(`Enuff with the test it's working fine!`)
-    //res.sendFile(path.join(__dirname , 'index.html'))
-})
-*/
-
 //===============Main Routes
 // const usersRouter = require('./routes/api')(io);
 // app.use('/', usersRouter);
 
-const bgcRouter= require('./routes/bgcapi');
+const bgcRouter= require('./routes/bgcapi')(io);
 app.use('/bgc', bgcRouter);
 
 const cookieParser = require('cookie-parser');

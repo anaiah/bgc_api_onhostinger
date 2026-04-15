@@ -18,7 +18,7 @@
     "chrome-launcher": "^1.2.0",
     "chromium": "^3.0.3",
     "cookie-parser": "^1.4.6",
-    "cors": "^2.8.5",
+    "cors": "^2.8.6",
     "csv-parser": "^3.2.0",
     "dotenv": "^16.0.3",
     "emailjs": "^4.0.2",
