@@ -474,93 +474,101 @@ router.get('/getrooms/:date', async (req, res) => {
 });
 
 ///===== FOR GOOGLE CALENDAR API ==========//
-const { google } = require('googleapis');
-const path = require('path');
-
-// Clean the Base64 string of any accidental whitespace/newlines from the dashboard
-const rawBase64 = process.env.GOOGLE_JSON_KEY.trim().replace(/\s/g, '');
-
-// Decode and sanitize the resulting JSON string
-const decodedString = Buffer.from(rawBase64, 'base64').toString('utf-8');
-const sanitizedJson = decodedString.replace(/\n/g, '\\n').replace(/\r/g, '');
-
-const keys = JSON.parse(sanitizedJson);
+// const { google } = require('googleapis');
+// const path = require('path');
 
 
-const authClient = new google.auth.JWT({
-        email: keys.client_email,
-    key: keys.private_key.replace(/\\n/g, '\n'), // Crucial: convert string \n back to actual newlines for Google
+// let keys
 
-    scopes: ['https://www.googleapis.com/auth/calendar'] 
-});
+// try{
+//     // Clean the Base64 string of any accidental whitespace/newlines from the dashboard
+//     const rawBase64 = process.env.GOOGLE_JSON_KEY.trim().replace(/\s/g, '');
 
+//     // Decode and sanitize the resulting JSON string
+//     const decodedString = Buffer.from(rawBase64, 'base64').toString('utf-8');
+//     const sanitizedJson = decodedString.replace(/\n/g, '\\n').replace(/\r/g, '');
 
-const calendar = google.calendar({ version: 'v3', auth: authClient });
-const CALENDAR_ID = 'anaiahdaniel@gmail.com'; 
+//     keys = JSON.parse(sanitizedJson);
 
+// }catch (err){
+//     console.log('CRITICIAL:GOOGLE KEY PARSE FAIL',err)
+//     keys={}
+// }
 
-// ************************** THIS IS THE ACTUAL ROOM *******************************//
-router.post('/room-reserve', async (req, res) => {
-    const { room_id, date_from, date_to, added_by } = req.body;
+// const authClient = new google.auth.JWT({
+//         email: keys.client_email,
+//     key: keys.private_key.replace(/\\n/g, '\n'), // Crucial: convert string \n back to actual newlines for Google
 
-    try {
-        // 1. MySQL Insert
-        const sql = `INSERT INTO bgc_room_reserve (room_id, date_from, date_to, added_by) VALUES (?, ?, ?, ?)`;
-        const [result] = await db.query(sql, [room_id, date_from, date_to, added_by]);
-        const dbId = result.insertId;
-
-        // 2. Google Calendar Sync
-        let googleEventId = null;
-        try {
-            // Force authorization
-            await authClient.authorize();
-
-            const gEvent = await calendar.events.insert({
-                calendarId: CALENDAR_ID,
-                requestBody: {
-                    summary: `Room Booking: ${room_id}`,
-                    description: `Reserved by ${added_by}`,
-                    start: { 
-                        dateTime: new Date(date_from).toISOString(),
-                        timeZone: 'Asia/Manila' 
-                    },
-                    end: { 
-                        dateTime: new Date(date_to).toISOString(),
-                        timeZone: 'Asia/Manila'
-                    },
-                },
-            });
-            
-            googleEventId = gEvent.data.id;
-
-            // 3. Save the Google ID back to your database
-            await db.query(`UPDATE bgc_room_reserve SET google_event_id = ? WHERE id = ?`, [googleEventId, dbId]);
-            
-            console.log("Success! Google Event ID:", googleEventId);
-
-        } catch (gErr) {
-            // This will now show the REAL error (likely 404 if not shared correctly)
-            console.error("Google sync error detail:", gErr.response ? gErr.response.data : gErr.message);
-        }
-
-        res.json({ success: true, id: dbId, syncedToGoogle: !!googleEventId });
-
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
+//     scopes: ['https://www.googleapis.com/auth/calendar'] 
+// });
 
 
+// const calendar = google.calendar({ version: 'v3', auth: authClient });
+// const CALENDAR_ID = 'anaiahdaniel@gmail.com'; 
+
+
+// // ************************** THIS IS THE ACTUAL ROOM *******************************//
 // router.post('/room-reserve', async (req, res) => {
 //     const { room_id, date_from, date_to, added_by } = req.body;
+
 //     try {
+//         // 1. MySQL Insert
 //         const sql = `INSERT INTO bgc_room_reserve (room_id, date_from, date_to, added_by) VALUES (?, ?, ?, ?)`;
 //         const [result] = await db.query(sql, [room_id, date_from, date_to, added_by]);
-//         res.json({ success: true, id: result.insertId });
+//         const dbId = result.insertId;
+
+//         // 2. Google Calendar Sync
+//         let googleEventId = null;
+//         try {
+//             // Force authorization
+//             await authClient.authorize();
+
+//             const gEvent = await calendar.events.insert({
+//                 calendarId: CALENDAR_ID,
+//                 requestBody: {
+//                     summary: `Room Booking: ${room_id}`,
+//                     description: `Reserved by ${added_by}`,
+//                     start: { 
+//                         dateTime: new Date(date_from).toISOString(),
+//                         timeZone: 'Asia/Manila' 
+//                     },
+//                     end: { 
+//                         dateTime: new Date(date_to).toISOString(),
+//                         timeZone: 'Asia/Manila'
+//                     },
+//                 },
+//             });
+            
+//             googleEventId = gEvent.data.id;
+
+//             // 3. Save the Google ID back to your database
+//             await db.query(`UPDATE bgc_room_reserve SET google_event_id = ? WHERE id = ?`, [googleEventId, dbId]);
+            
+//             console.log("Success! Google Event ID:", googleEventId);
+
+//         } catch (gErr) {
+//             // This will now show the REAL error (likely 404 if not shared correctly)
+//             console.error("Google sync error detail:", gErr.response ? gErr.response.data : gErr.message);
+//         }
+
+//         res.json({ success: true, id: dbId, syncedToGoogle: !!googleEventId });
+
 //     } catch (err) {
 //         res.status(500).json({ success: false, error: err.message });
 //     }
 // });
+
+
+router.post('/room-reserve', async (req, res) => {
+    const { room_id, date_from, date_to, added_by } = req.body;
+    try {
+        const sql = `INSERT INTO bgc_room_reserve (room_id, date_from, date_to, added_by) VALUES (?, ?, ?, ?)`;
+        const [result] = await db.query(sql, [room_id, date_from, date_to, added_by]);
+        res.json({ success: true, id: result.insertId });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
 
 
 // THIS IS FOR DELETION OF BOOKING RECORD
