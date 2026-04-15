@@ -63,12 +63,12 @@ app.use(bodyParser.urlencoded({extended:false}))
 //=== this is !important for CORS especially for different servers calling====//
 //const allowedOrigins = ["https://app.vantaztic.com","https://app.vantaztic.com","https://osndp1.onrender.com","http://localhost:4001"]
 
-app.use(cors({
-  origin:'https://ccfbgc.org',
-  methods:['GET','POST','PUT','DELETE','OPTIONS'],
-  allowedHeaders: ['Content-Type','Authorization']
+// app.use(cors({
+//   origin:'https://ccfbgc.org',
+//   methods:['GET','POST','PUT','DELETE','OPTIONS'],
+//   allowedHeaders: ['Content-Type','Authorization']
 
-}))
+// }))
 
 //======== END NODEJS CORS SETTING
 const getRandomPin = (chars, len)=>[...Array(len)].map(
