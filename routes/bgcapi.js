@@ -477,16 +477,20 @@ router.get('/getrooms/:date', async (req, res) => {
 const { google } = require('googleapis');
 const path = require('path');
 
+// Clean the Base64 string of any accidental whitespace/newlines from the dashboard
+const rawBase64 = process.env.GOOGLE_JSON_KEY.trim().replace(/\s/g, '');
 
+// Decode and sanitize the resulting JSON string
+const decodedString = Buffer.from(rawBase64, 'base64').toString('utf-8');
+const sanitizedJson = decodedString.replace(/\n/g, '\\n').replace(/\r/g, '');
 
-const decodedString = Buffer.from(process.env.GOOGLE_JSON_KEY, 'base64').toString('utf-8');
-const sanitizedString = decodedString.replace(/\n/g, '\\n').replace(/\r/g, '');
+const keys = JSON.parse(sanitizedJson);
 
-const keys = JSON.parse(sanitizedString);
 
 const authClient = new google.auth.JWT({
-    email: keys.client_email,
-    key: keys.private_key.replace(/\\n/g, '\n'), // This puts them back correctly for Google
+        email: keys.client_email,
+    key: keys.private_key.replace(/\\n/g, '\n'), // Crucial: convert string \n back to actual newlines for Google
+
     scopes: ['https://www.googleapis.com/auth/calendar'] 
 });
 
