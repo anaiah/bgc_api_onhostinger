@@ -546,8 +546,8 @@ router.post('/room-reserve', async (req, res) => {
         
         const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
 
-        const date_from_gcal = `${date_from}T12:00:00+08:00`;
-        const date_to_gcal = `${date_to}T13:00:00+08:00`;
+        const date_from_gcal = date_from.replace('','T')+'+08:00';
+        const date_to_gcal = date_to.replace('','T')+'+08:00';
 
 
         const event = await calendar.events.insert({
