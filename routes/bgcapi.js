@@ -488,7 +488,7 @@ router.get('/google/callback', async (req, res) => {
     try { 
         const { code } = req.query; 
         const { tokens } = await oauth2Client.getToken(code); 
-        
+
         await db.query( `INSERT INTO google_oauth (id, access_token, refresh_token, expiry_date) VALUES (1, ?, ?, ?) 
             ON DUPLICATE KEY UPDATE access_token = VALUES(access_token), 
             refresh_token = VALUES(refresh_token), expiry_date = VALUES(expiry_date)`, 
@@ -501,16 +501,91 @@ router.get('/google/callback', async (req, res) => {
     } 
 });
 
+//=============ACTUAL RESERVE====================//
 router.post('/room-reserve', async (req, res) => {
+
     const { room_id, date_from, date_to, added_by } = req.body;
+
+    const { google } = require('googleapis');
+
+    const connection = await db.getConnection();
+
     try {
-        const sql = `INSERT INTO bgc_room_reserve (room_id, date_from, date_to, added_by) VALUES (?, ?, ?, ?)`;
-        const [result] = await db.query(sql, [room_id, date_from, date_to, added_by]);
-        res.json({ success: true, id: result.insertId });
+        await connection.beginTransaction();
+
+        const [result] = await connection.query(
+            `INSERT INTO bgc_room_reserve (room_id, date_from, date_to, added_by)
+            VALUES (?, ?, ?, ?)`,
+            [room_id, date_from, date_to, added_by]
+        );
+
+        const [rows] = await connection.query(
+            `SELECT refresh_token FROM google_calendar_tokens WHERE id = 1 LIMIT 1`
+        );
+
+        if (!rows.length || !rows[0].refresh_token) {
+            await connection.commit();
+        
+            return res.json({
+                success: true,
+                id: result.insertId,
+                warning: 'Reservation saved, but Google Calendar is not connected.'
+            });
+        }
+
+        const oauth2Client = new google.auth.OAuth2(
+            process.env.GOOGLE_CLIENT_ID,
+            process.env.GOOGLE_CLIENT_SECRET,
+            process.env.GOOGLE_REDIRECT_URI
+        );
+
+        oauth2Client.setCredentials({ refresh_token: rows[0].refresh_token });
+        
+        const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+
+        const event = await calendar.events.insert({
+            calendarId: 'primary',
+            requestBody: {
+                summary: `Room reservation #${result.insertId}`,
+                description: `Room ID: ${room_id}\nReserved by: ${added_by}`,
+                start: { dateTime: new Date(date_from).toISOString() },
+                end: { dateTime: new Date(date_to).toISOString() }
+            }
+        });
+
+        await connection.query(
+            `UPDATE bgc_room_reserve SET google_event_id = ? WHERE id = ?`,
+            [event.data.id, result.insertId]
+        );
+
+        await connection.commit();
+
+        res.json({
+            success: true,
+            id: result.insertId,
+            google_event_id: event.data.id,
+            message: 'Reservation and calendar event created'
+        });
+
     } catch (err) {
+        await connection.rollback();
         res.status(500).json({ success: false, error: err.message });
+    } finally {
+        connection.release();
     }
-});
+
+}); //===================END RESERVATION=========================//
+
+// router.post('/room-reserve', async (req, res) => {
+//     const { room_id, date_from, date_to, added_by } = req.body;
+//     try {
+//         const sql = `INSERT INTO bgc_room_reserve (room_id, date_from, date_to, added_by) VALUES (?, ?, ?, ?)`;
+//         const [result] = await db.query(sql, [room_id, date_from, date_to, added_by]);
+//         res.json({ success: true, id: result.insertId });
+//     } catch (err) {
+//         res.status(500).json({ success: false, error: err.message });
+//     }
+// });
 
 
 // THIS IS FOR DELETION OF BOOKING RECORD
