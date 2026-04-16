@@ -545,18 +545,17 @@ router.post('/room-reserve', async (req, res) => {
         oauth2Client.setCredentials({ refresh_token: rows[0].refresh_token });
         
         const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
-
-        const date_from_gcal = date_from.replace('','T')+'+08:00';
-        const date_to_gcal = date_to.replace('','T')+'+08:00';
-
+        
+        const startISO = new Date(req.body.date_from.replace(" ", "T")).toISOString();
+        const endISO = new Date(req.body.date_to.replace(" ", "T")).toISOString();
 
         const event = await calendar.events.insert({
             calendarId: 'primary',
             requestBody: {
                 summary: `${req.body.room_name} Reservation by: ${req.body.addedby_name }`,
                 description: `Room/Table: ${ req.body.room_name}\nReserved by: ${req.body.addedby_name}`,
-                start: { dateTime:  date_from_gcal, timeZone: 'Asia/Manila'},
-                end: { dateTime: date_to_gcal, timeZone: 'Asia/Manila' }
+                start: { dateTime:  startISO, timeZone: 'Asia/Manila'},
+                end: { dateTime: endISO, timeZone: 'Asia/Manila' }
             }
         });
 
