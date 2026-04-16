@@ -549,8 +549,8 @@ router.post('/room-reserve', async (req, res) => {
         const event = await calendar.events.insert({
             calendarId: 'primary',
             requestBody: {
-                summary: `Room reservation #${result.insertId}`,
-                description: `Room ID: ${room_id}\nReserved by: ${added_by}`,
+                summary: `${req.body.room_name.toUpperCase()} Reservation by: ${req.body.addedby_name.toUpperCase() }`,
+                description: `Room/Table: ${ req.body.room_name.toUpperCase() }\nReserved by: ${req.body.addedby_name.toUpperCase()}`,
                 start: { dateTime:  date_from, timeZone:'Asia/Manila'},
                 end: { dateTime: date_to, timeZone:'Asia/Manila' }
             }
