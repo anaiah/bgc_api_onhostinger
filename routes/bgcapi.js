@@ -546,13 +546,17 @@ router.post('/room-reserve', async (req, res) => {
         
         const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
 
+        const date_from_gcal = `${date_from}T12:00:00+08:00`;
+        const date_to_gcal = `${date_to}T13:00:00+08:00`;
+
+
         const event = await calendar.events.insert({
             calendarId: 'primary',
             requestBody: {
-                summary: `${req.body.room_name.toUpperCase()} Reservation by: ${req.body.addedby_name.toUpperCase() }`,
-                description: `Room/Table: ${ req.body.room_name.toUpperCase() }\nReserved by: ${req.body.addedby_name.toUpperCase()}`,
-                start: { dateTime:  date_from, timeZone:'Asia/Manila'},
-                end: { dateTime: date_to, timeZone:'Asia/Manila' }
+                summary: `${req.body.room_name} Reservation by: ${req.body.addedby_name }`,
+                description: `Room/Table: ${ req.body.room_name}\nReserved by: ${req.body.addedby_name}`,
+                start: { dateTime:  date_from_gcal, timeZone: 'Asia/Manila'},
+                end: { dateTime: date_to_gcal, timeZone: 'Asia/Manila' }
             }
         });
 
