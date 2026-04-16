@@ -551,8 +551,8 @@ router.post('/room-reserve', async (req, res) => {
             requestBody: {
                 summary: `Room reservation #${result.insertId}`,
                 description: `Room ID: ${room_id}\nReserved by: ${added_by}`,
-                start: { dateTime: new Date(date_from).toISOString() },
-                end: { dateTime: new Date(date_to).toISOString() }
+                start: { dateTime:  date_from, timeZone:'Asia/Manila'},
+                end: { dateTime: date_to, timeZone:'Asia/Manila' }
             }
         });
 
