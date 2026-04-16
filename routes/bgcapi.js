@@ -479,7 +479,10 @@ const oauth2Client = new google.auth.OAuth2( process.env.GOOGLE_CLIENT_ID, proce
 
 // Step 1: admin clicks connect button 
 router.get('/google/auth', (req, res) => { 
-    const url = oauth2Client.generateAuthUrl({ access_type: 'offline', prompt: 'consent', scope: ['https://www.googleapis.com/auth/calendar'] }); 
+    const url = oauth2Client.generateAuthUrl({ 
+        access_type: 'offline', 
+        prompt: 'consent', 
+        scope: ['https://www.googleapis.com/auth/calendar'] }); 
     res.redirect(url); 
 }); 
 
@@ -520,12 +523,12 @@ router.post('/room-reserve', async (req, res) => {
         );
 
         const [rows] = await connection.query(
-            `SELECT refresh_token FROM google_calendar_tokens WHERE id = 1 LIMIT 1`
+            `SELECT refresh_token FROM google_oauth WHERE id = 1 LIMIT 1`
         );
 
         if (!rows.length || !rows[0].refresh_token) {
             await connection.commit();
-        
+         
             return res.json({
                 success: true,
                 id: result.insertId,
