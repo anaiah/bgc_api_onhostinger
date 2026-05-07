@@ -183,33 +183,63 @@ router.post('/logout', (req, res) => {
 });
 
 //========GRID.JS =================//
-router.get('/get-target-grid', async (req, res) => {
+router.get('/get-target-grid/:segment', async (req, res) => {
+
+    console.log('**** FIRED GET-TARGET-GRID() ', req.params.segment)
+
+    let xsegment
+
     try {
 
         //the field is important in order, coz this is the order of columns in the grid.js, so if you change the order here, change it also in the grid.js column definition
+        
+        //orig -->  t.ministry_segment AS 'Ministry',    
+        switch ( req.params.segment ){
+            case 'kpi':
+                xsegment = 'KPIs'
+                break;
+            case 'ministry':
+                xsegment = 'MINISTRY EVENTS'
+                break;
+            case 'mission':
+                xsegment = 'MISSIONAL'
+                break;
+
+        }
+
+
         const sql = `
             SELECT 
-                t.ministry_segment AS 'Ministry',    
-                t.target_value AS 'FY Target',
-                SUM(CASE WHEN MONTH(h.date_added) = 1 THEN h.headcount ELSE 0 END) AS 'Jan',
-                SUM(CASE WHEN MONTH(h.date_added) = 2 THEN h.headcount ELSE 0 END) AS 'Feb',
-                SUM(CASE WHEN MONTH(h.date_added) = 3 THEN h.headcount ELSE 0 END) AS 'Mar',
-                SUM(CASE WHEN MONTH(h.date_added) = 4 THEN h.headcount ELSE 0 END) AS 'Apr',
-                SUM(CASE WHEN MONTH(h.date_added) = 5 THEN h.headcount ELSE 0 END) AS 'May',
-                SUM(CASE WHEN MONTH(h.date_added) = 6 THEN h.headcount ELSE 0 END) AS 'Jun',
-                SUM(CASE WHEN MONTH(h.date_added) = 7 THEN h.headcount ELSE 0 END) AS 'Jul',
-                SUM(CASE WHEN MONTH(h.date_added) = 8 THEN h.headcount ELSE 0 END) AS 'Aug',
-                SUM(CASE WHEN MONTH(h.date_added) = 9 THEN h.headcount ELSE 0 END) AS 'Sep',
-                SUM(CASE WHEN MONTH(h.date_added) = 10 THEN h.headcount ELSE 0 END) AS 'Oct',
-                SUM(CASE WHEN MONTH(h.date_added) = 11 THEN h.headcount ELSE 0 END) AS 'Nov',
-                SUM(CASE WHEN MONTH(h.date_added) = 12 THEN h.headcount ELSE 0 END) AS 'Dec'
-            FROM bgc_targets t
-                LEFT JOIN bgc_headcount h ON t.ministry_segment COLLATE utf8mb4_unicode_ci = h.ministry_segment COLLATE utf8mb4_unicode_ci
-                AND YEAR(h.date_added) = t.fiscal_year
-            WHERE t.fiscal_year = YEAR(CURDATE())
-            GROUP BY t.ministry_segment, t.target_value;
-        `;
-        const [rows] = await db.query(sql);
+                r.rpt_grp,
+                r.rpt_description AS 'Ministry',    
+                COALESCE(t.target_value, 0) AS 'FY Target',
+                COALESCE(SUM(CASE WHEN MONTH(h.date_added) = 1 THEN h.headcount ELSE 0 END), 0) AS 'Jan',
+                COALESCE(SUM(CASE WHEN MONTH(h.date_added) = 2 THEN h.headcount ELSE 0 END), 0) AS 'Feb',
+                COALESCE(SUM(CASE WHEN MONTH(h.date_added) = 3 THEN h.headcount ELSE 0 END), 0) AS 'Mar',
+                COALESCE(SUM(CASE WHEN MONTH(h.date_added) = 4 THEN h.headcount ELSE 0 END), 0) AS 'Apr',
+                COALESCE(SUM(CASE WHEN MONTH(h.date_added) = 5 THEN h.headcount ELSE 0 END), 0) AS 'May',
+                COALESCE(SUM(CASE WHEN MONTH(h.date_added) = 6 THEN h.headcount ELSE 0 END), 0) AS 'Jun',
+                COALESCE(SUM(CASE WHEN MONTH(h.date_added) = 7 THEN h.headcount ELSE 0 END), 0) AS 'Jul',
+                COALESCE(SUM(CASE WHEN MONTH(h.date_added) = 8 THEN h.headcount ELSE 0 END), 0) AS 'Aug',
+                COALESCE(SUM(CASE WHEN MONTH(h.date_added) = 9 THEN h.headcount ELSE 0 END), 0) AS 'Sep',
+                COALESCE(SUM(CASE WHEN MONTH(h.date_added) = 10 THEN h.headcount ELSE 0 END), 0) AS 'Oct',
+                COALESCE(SUM(CASE WHEN MONTH(h.date_added) = 11 THEN h.headcount ELSE 0 END), 0) AS 'Nov',
+                COALESCE(SUM(CASE WHEN MONTH(h.date_added) = 12 THEN h.headcount ELSE 0 END), 0) AS 'Dec'
+            FROM bgc_report r
+            LEFT JOIN bgc_targets t 
+                ON r.rpt_description COLLATE utf8mb4_unicode_ci = t.ministry_segment COLLATE utf8mb4_unicode_ci
+                AND t.fiscal_year = YEAR(CURDATE())
+            LEFT JOIN bgc_headcount h 
+                ON r.rpt_description COLLATE utf8mb4_unicode_ci = h.ministry_segment COLLATE utf8mb4_unicode_ci
+                AND YEAR(h.date_added) = YEAR(CURDATE())
+            WHERE r.rpt_grp = ?
+            GROUP BY 
+                r.rpt_grp, 
+                r.rpt_description, 
+                t.target_value, 
+                r.rpt_sequence
+            ORDER BY r.rpt_sequence; `;
+        const [rows] = await db.query(sql,[xsegment]);
         
         const columns = rows.length > 0 ? Object.keys(rows[0]) : [];
         const data = rows.map(row => Object.values(row));

@@ -71,8 +71,11 @@ app.use(bodyParser.urlencoded({extended:false}))
 
 // }))
 
+
+app.use(cors())
+
 app.use((req, res, next) => {
-    const allowedOrigins = ['https://ccfbgc.org', 'https://www.ccfbgc.org'];
+    const allowedOrigins = ['https://ccfbgc.org', 'https://www.ccfbgc.org','http://127.0.0.1:5500'];
     const origin = req.headers.origin;
 
     if (allowedOrigins.includes(origin)) {
@@ -121,6 +124,10 @@ app.get('/',(req, res)=>{
 
 const bgcRouter= require('./routes/bgcapi');
 app.use('/bgc', bgcRouter);
+
+const exaltRouter= require('./routes/exalt');
+app.use('/exalt',exaltRouter );
+
 
 const cookieParser = require('cookie-parser');
 app.use(cookieParser())
