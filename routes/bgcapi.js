@@ -272,6 +272,274 @@ router.post('/save-target', async (req, res) => {
 });
 
 
+app.get('/api/export-ministry-report', async (req, res) => {
+    try {
+        const sql = `... your SQL query ...`; 
+        const [rows] = await db.query(sql);
+
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Ministry Report');
+
+        // 1. HEADERS (Rows 1-4)
+        worksheet.mergeCells('A1:P1'); // Extended to P for the AVG column
+        worksheet.getCell('A1').value = 'CCF BGC';
+        worksheet.getCell('A1').font = { bold: true, size: 14 };
+
+        worksheet.mergeCells('A2:P2');
+        worksheet.getCell('A2').value = 'MINISTRY PERFORMANCE SUMMARY';
+        worksheet.getCell('A2').font = { bold: true, size: 12 };
+
+        worksheet.mergeCells('A3:P3');
+        worksheet.getCell('A3').value = `As of: ${new Date().toLocaleDateString()}`;
+
+        // 2. TABLE HEADERS (Row 5) - Added "AVG"
+        const headers = ["Ministry", "FY Target", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "AVG"];
+        const headerRow = worksheet.getRow(5);
+        headerRow.values = headers;
+
+        headerRow.eachCell((cell) => {
+            cell.font = { bold: true };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
+            cell.border = { bottom: { style: 'thin' } };
+        });
+
+        // 3. DATA ROWS
+        let currentRow = 6;
+        let lastGrp = "";
+
+        rows.forEach((row) => {
+            // Group Header Styling (Dark Background, White Text)
+            if (row.rpt_grp !== lastGrp) {
+                worksheet.mergeCells(`A${currentRow}:P${currentRow}`);
+                const groupCell = worksheet.getCell(`A${currentRow}`);
+                groupCell.value = row.rpt_grp.toUpperCase();
+                groupCell.font = { bold: true, color: { argb: 'FFFFFFFF' } }; // White Text
+                groupCell.fill = {
+                    type: 'pattern',
+                    pattern: 'solid',
+                    fgColor: { argb: 'FF444444' } // Dark Grey Background
+                };
+                lastGrp = row.rpt_grp;
+                currentRow++;
+            }
+
+            // Calculate Average (Months with value > 0)
+            const months = [row.Jan, row.Feb, row.Mar, row.Apr, row.May, row.Jun, row.Jul, row.Aug, row.Sep, row.Oct, row.Nov, row.Dec];
+            const activeMonths = months.filter(val => val > 0);
+            const avgValue = activeMonths.length > 0 
+                ? (activeMonths.reduce((a, b) => a + b, 0) / activeMonths.length).toFixed(2) 
+                : 0;
+
+            const target = row['FY Target'] || 0;
+
+            // Add the data row
+            const dataRow = worksheet.getRow(currentRow);
+            dataRow.values = [
+                row.Ministry,
+                target,
+                ...months,
+                parseFloat(avgValue)
+            ];
+
+            // Conditional Formatting for AVG column (Column P / Index 15)
+            const avgCell = dataRow.getCell(15);
+            if (parseFloat(avgValue) >= target && target > 0) {
+                avgCell.font = { color: { argb: 'FF008000' }, bold: true }; // Green
+            } else if (target > 0) {
+                avgCell.font = { color: { argb: 'FFFF0000' }, bold: true }; // Red
+            }
+
+            currentRow++;
+        });
+
+        // Column Widths
+        worksheet.getColumn(1).width = 30; // Ministry
+        for (let i = 2; i <= 15; i++) {
+            worksheet.getColumn(i).width = 12; // Targets, Months, and AVG
+        }
+
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename=MinistryReport.xlsx');
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        res.send(buffer);
+
+    } catch (error) {
+        console.error("Export Error:", error);
+        res.status(500).send("Internal Server Error");
+    }
+});
+
+
+//==============FOR MAKING IT
+router.get('/downloadExcel', async (req, res) => {
+   console.log('***FIRING DOWNLOAD EXCEL() ****** ')
+    try {
+        const sql = `
+            SELECT 
+                r.rpt_grp,
+                r.rpt_description AS 'Ministry',    
+                COALESCE(t.target_value, 0) AS 'FY Target',
+                COALESCE(SUM(CASE WHEN MONTH(h.date_added) = 1 THEN h.headcount ELSE 0 END), 0) AS 'Jan',
+                COALESCE(SUM(CASE WHEN MONTH(h.date_added) = 2 THEN h.headcount ELSE 0 END), 0) AS 'Feb',
+                COALESCE(SUM(CASE WHEN MONTH(h.date_added) = 3 THEN h.headcount ELSE 0 END), 0) AS 'Mar',
+                COALESCE(SUM(CASE WHEN MONTH(h.date_added) = 4 THEN h.headcount ELSE 0 END), 0) AS 'Apr',
+                COALESCE(SUM(CASE WHEN MONTH(h.date_added) = 5 THEN h.headcount ELSE 0 END), 0) AS 'May',
+                COALESCE(SUM(CASE WHEN MONTH(h.date_added) = 6 THEN h.headcount ELSE 0 END), 0) AS 'Jun',
+                COALESCE(SUM(CASE WHEN MONTH(h.date_added) = 7 THEN h.headcount ELSE 0 END), 0) AS 'Jul',
+                COALESCE(SUM(CASE WHEN MONTH(h.date_added) = 8 THEN h.headcount ELSE 0 END), 0) AS 'Aug',
+                COALESCE(SUM(CASE WHEN MONTH(h.date_added) = 9 THEN h.headcount ELSE 0 END), 0) AS 'Sep',
+                COALESCE(SUM(CASE WHEN MONTH(h.date_added) = 10 THEN h.headcount ELSE 0 END), 0) AS 'Oct',
+                COALESCE(SUM(CASE WHEN MONTH(h.date_added) = 11 THEN h.headcount ELSE 0 END), 0) AS 'Nov',
+                COALESCE(SUM(CASE WHEN MONTH(h.date_added) = 12 THEN h.headcount ELSE 0 END), 0) AS 'Dec'
+            FROM bgc_report r
+            LEFT JOIN bgc_targets t 
+                ON r.rpt_description COLLATE utf8mb4_unicode_ci = t.ministry_segment COLLATE utf8mb4_unicode_ci
+                AND t.fiscal_year = YEAR(CURDATE())
+            LEFT JOIN bgc_headcount h 
+                ON r.rpt_description COLLATE utf8mb4_unicode_ci = h.ministry_segment COLLATE utf8mb4_unicode_ci
+                AND YEAR(h.date_added) = YEAR(CURDATE())
+            GROUP BY 
+                r.rpt_grp, 
+                r.rpt_description, 
+                t.target_value, 
+                r.rpt_sequence
+            ORDER BY r.rpt_grp, r.rpt_sequence;`;
+
+        const [rows] = await db.query(sql);
+
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Ministry Report');
+
+        // 1. TOP HEADERS (Rows 1-4)
+        // We use 15 columns (A through O): Ministry(1) + Target(1) + Months(12) + AVG(1) = 15
+        worksheet.mergeCells('A1:O1');
+        worksheet.getCell('A1').value = 'CCF BGC';
+        worksheet.getCell('A1').font = { bold: true, size: 12 };
+
+        worksheet.mergeCells('A2:O2');
+        worksheet.getCell('A2').value = '4th Flr, One Bonifactio High Street Mall';
+        worksheet.getCell('A2').font = { bold: true, size: 12 };
+
+        worksheet.mergeCells('A3:O3');
+        worksheet.getCell('A3').value = '5th Ave, BGC, Taguig, Metro Manila';
+        worksheet.getCell('A3').font = { bold: true, size: 12 };
+
+        worksheet.mergeCells('A4:O4');
+        const today = new Date(); // On 05/08/2026, this becomes May 8, 2026
+        const formattedDate = today.toLocaleDateString('en-US', {
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric'
+        });
+        worksheet.getCell('A4').value = `As of ${formattedDate}`;
+
+        // 2. TABLE HEADERS (Row 6)
+        const headers = ["Ministry", "FY Target", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "AVG"];
+        const headerRow = worksheet.getRow(6);
+        headerRow.values = headers;
+
+        headerRow.eachCell((cell, colNumber) => {
+            cell.font = { bold: true }
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } }; // Light Grey
+            cell.border = { bottom: { style: 'thin' } };
+
+             // CENTER HEADERS: 
+            // Apply centering to Column 3 (Jan) throcolugh Column 15 (AVG)
+            if (colNumber >= 2 && colNumber <= 15) {
+                cell.alignment = { horizontal: 'center' };
+            }
+        });
+
+        // 3. DATA ROWS
+        let currentRow = 7;
+        let lastGrp = "";
+
+        rows.forEach((row) => {
+            // --- GROUP HEADER ---
+            if (row.rpt_grp !== lastGrp) {
+                worksheet.mergeCells(`A${currentRow}:O${currentRow}`);
+                const groupCell = worksheet.getCell(`A${currentRow}`);
+                groupCell.value = row.rpt_grp.toUpperCase();
+                
+                // Styling: Dark Grey Background, White Bold Text
+                groupCell.fill = {
+                    type: 'pattern',
+                    pattern: 'solid',
+                    fgColor: { argb: 'FF333333' } // Darker Grey
+                };
+                groupCell.font = {
+                    bold: true,
+                    color: { argb: 'FFFFFFFF' } // Pure White
+                };
+                
+                lastGrp = row.rpt_grp;
+                currentRow++;
+            }
+
+            // --- CALCULATE AVG ---
+            const months = [
+                Number(row.Jan), Number(row.Feb), Number(row.Mar), Number(row.Apr), 
+                Number(row.May), Number(row.Jun), Number(row.Jul), Number(row.Aug), 
+                Number(row.Sep), Number(row.Oct), Number(row.Nov), Number(row.Dec)
+            ];
+            
+            // Filter months that actually have data (> 0) to get a real average
+            const activeMonths = months.filter(val => val > 0);
+            const avgValue = Math.round( activeMonths.length > 0 
+                ? (activeMonths.reduce((a, b) => a + b, 0) / activeMonths.length)
+                : 0);
+
+            const target = Number(row['FY Target']) || 0;
+
+            // --- ADD DATA ROW ---
+            const dataRow = worksheet.getRow(currentRow);
+            dataRow.values = [
+                row.Ministry,
+                target,
+                ...months,
+                parseFloat(avgValue.toFixed(2)) // This goes into the AVG column (15)
+            ];
+
+            //just in case u want to center month values
+            // Center the monthly data values (Columns 3 to 15)
+            // for (let i = 3; i <= 15; i++) {
+            //     dataRow.getCell(i).alignment = { horizontal: 'center' };
+            // }
+
+            // --- CONDITIONAL COLORING FOR AVG (Column 15 / 'O') ---
+            const avgCell = dataRow.getCell(15);
+            if (target > 0) {
+                if (avgValue >= target) {
+                    avgCell.font = { color: { argb: 'FF008000' }, bold: true }; // Green
+                } else {
+                    avgCell.font = { color: { argb: 'FFFF0000' }, bold: true }; // Red
+                }
+            }
+
+            currentRow++;
+        });
+
+        // 4. COLUMN WIDTHS
+        worksheet.getColumn(1).width = 35; // Ministry
+        worksheet.getColumn(2).width = 12; // Target
+        for (let i = 3; i <= 14; i++) { worksheet.getColumn(i).width = 8; } // Months
+        worksheet.getColumn(15).width = 12; // AVG
+
+        // 5. SEND FILE
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename=MinistryReport.xlsx');
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        res.send(buffer);
+
+    } catch (error) {
+        console.error("Excel Export Error:", error);
+        res.status(500).json({ error: "Failed to generate Excel file" });
+    }
+})
+
+
 //====HELPERS
 function requireAuth(req, res, next) {
     const h = req.headers.authorization || '';
