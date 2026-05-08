@@ -426,17 +426,21 @@ router.get('/downloadExcel', async (req, res) => {
         worksheet.getCell('A3').font = { bold: true, size: 12 };
 
         worksheet.mergeCells('A4:O4');
+        worksheet.getCell('A4').value = 'Ministry Performance vs. FY Targets';
+        worksheet.getCell('A4').font = { bold: true, size: 12 };
+
+        worksheet.mergeCells('A5:O5');
         const today = new Date(); // On 05/08/2026, this becomes May 8, 2026
         const formattedDate = today.toLocaleDateString('en-US', {
             month: 'long',
             day: 'numeric',
             year: 'numeric'
         });
-        worksheet.getCell('A4').value = `As of ${formattedDate}`;
+        worksheet.getCell('A5').value = `As of ${formattedDate}`;
 
-        // 2. TABLE HEADERS (Row 6)
+        // 2. TABLE HEADERS (Row 7)
         const headers = ["Ministry", "FY Target", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "AVG"];
-        const headerRow = worksheet.getRow(6);
+        const headerRow = worksheet.getRow(7);
         headerRow.values = headers;
 
         headerRow.eachCell((cell, colNumber) => {
@@ -452,7 +456,7 @@ router.get('/downloadExcel', async (req, res) => {
         });
 
         // 3. DATA ROWS
-        let currentRow = 7;
+        let currentRow = 8;
         let lastGrp = "";
 
         rows.forEach((row) => {
