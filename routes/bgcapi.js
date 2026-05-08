@@ -513,7 +513,7 @@ router.get('/downloadExcel', async (req, res) => {
 
             //==== format color of FY Target data
             const fyCell = dataRow.getCell(2);
-            fyCell.font = { color: { argb: 'fffc0366'}, bold : true };
+            fyCell.font = { color: { argb: 'ff180b78'}, bold : true };
 
             // --- CONDITIONAL COLORING FOR AVG (Column 15 / 'O') ---
             const avgCell = dataRow.getCell(15);
