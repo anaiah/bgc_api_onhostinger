@@ -456,7 +456,7 @@ router.get('/downloadExcel', async (req, res) => {
         });
 
         // 3. DATA ROWS
-        let currentRow = 8;
+        let currentRow = 8; //start row 8
         let lastGrp = "";
 
         rows.forEach((row) => {
@@ -506,10 +506,14 @@ router.get('/downloadExcel', async (req, res) => {
             ];
 
             //just in case u want to center month values
-            // Center the monthly data values (Columns 3 to 15)
-            for (let i = 3; i <= 15; i++) {
+            // Center the monthly data values (Columns 2 to 15) (inc FY Targets)
+            for (let i = 2; i <= 15; i++) {
                 dataRow.getCell(i).alignment = { horizontal: 'center' };
             }
+
+            //==== format color of FY Target data
+            const fyCell = dataRow.getCell(2);
+            fyCell.font = { color: { argb: 'fffc0366'}, bold : true };
 
             // --- CONDITIONAL COLORING FOR AVG (Column 15 / 'O') ---
             const avgCell = dataRow.getCell(15);
