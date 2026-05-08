@@ -507,9 +507,9 @@ router.get('/downloadExcel', async (req, res) => {
 
             //just in case u want to center month values
             // Center the monthly data values (Columns 3 to 15)
-            // for (let i = 3; i <= 15; i++) {
-            //     dataRow.getCell(i).alignment = { horizontal: 'center' };
-            // }
+            for (let i = 3; i <= 15; i++) {
+                dataRow.getCell(i).alignment = { horizontal: 'center' };
+            }
 
             // --- CONDITIONAL COLORING FOR AVG (Column 15 / 'O') ---
             const avgCell = dataRow.getCell(15);
