@@ -426,7 +426,7 @@ router.get('/downloadExcel', async (req, res) => {
         worksheet.getCell('A3').font = { bold: true, size: 12 };
 
         worksheet.mergeCells('A4:O4');
-        worksheet.getCell('A4').value = 'Ministry Performance vs. FY Targets';
+        worksheet.getCell('A4').value = 'Ministry Performance vs. FY Target';
         worksheet.getCell('A4').font = { bold: true, size: 12 };
 
         worksheet.mergeCells('A5:O5');
