@@ -950,6 +950,9 @@ router.post('/register-leader', async (req, res) => {
         const defaultMinistryId = 10;
         const defaultGrpId = 5;
 
+        console.log( req.body)
+        //return false;
+
         // 2. ALWAYS RUN: Insert into bgc_dgroup regardless of role status
         const insertGroupSQL = `
             INSERT INTO bgc_dgroup 
