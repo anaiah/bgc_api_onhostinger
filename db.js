@@ -18,7 +18,7 @@ const config = {
     waitForConnections: true, 
     connectionLimit: 35, 
     queueLimit: 0, 
-    multipleStatements: false, 
+    multipleStatements: true, 
     connectTimeout: 10000, 
     enableKeepAlive: true, 
     charset: 'utf8mb4', 
