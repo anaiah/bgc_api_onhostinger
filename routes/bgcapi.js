@@ -941,8 +941,6 @@ router.delete('/delete-room-reserve/:id', async (req, res) => {
 //=====D-GROUP ENDPOINTS=========//
 
 //***** SAVE DGRP LEADER */
-
-
 router.post('/register-leader', async (req, res) => {
     try {
         // 1. Destructure the values from your payload object model
@@ -991,18 +989,27 @@ router.post('/register-leader', async (req, res) => {
         });
 
     } catch (error) {
+        // 3. CATCH AND EVALUATE DUPLICATE ERROR KEYS
+        // errno 1062 or code 'ER_DUP_ENTRY' means the email unique index rule was breached
+        if (error.errno === 1062 || error.code === 'ER_DUP_ENTRY') {
+            console.warn(`⚠️ Blocked duplicate registration attempt for email: ${req.body.email}`);
+            
+            return res.status(400).json({ 
+                success: false, 
+                isDuplicate: true,
+                message: 'This email address is already registered in our system.' 
+            });
+        }
+
+        // Handle generic database connection failures
         console.error("Critical async/await database connection tracking failure:", error);
         return res.status(500).json({ 
             success: false, 
             error: 'Database transaction routing processing execution exception track.' 
         });
+
     }
 });
-
-
-
-
-
 
 router.get('/testis', async (req,res) => {
         console.log('FRING TESTIS IN API.JS')
