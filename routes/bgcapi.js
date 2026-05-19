@@ -914,7 +914,7 @@ router.delete('/deleteBooking/:id', async (req, res) => {
         // 2. Fetch the Google Event ID from your MySQL table
         // Replace 'reservations' and 'google_event_id' with your actual table/column names
         const [rows] = await db.query(
-            'SELECT google_event_id FROM reservations WHERE id = ?', 
+            'SELECT google_event_id FROM bgc_room_reserve WHERE id = ?', 
             [reservationId]
         );
 
@@ -945,10 +945,10 @@ router.delete('/deleteBooking/:id', async (req, res) => {
         }
 
         // 4. Delete from MySQL table
-        await db.query('DELETE FROM reservations WHERE id = ?', [reservationId]);
+        await db.query('DELETE FROM bgc_room_reserve WHERE id = ?', [reservationId]);
 
         console.log('Reservation deleted from database and Google Calendar (if it existed).');
-        
+
         return res.status(200).json({ 
             success: true, 
             message: 'Reservation removed from database and Google Calendar.' 
