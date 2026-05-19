@@ -909,42 +909,64 @@ router.post('/room-reserve', async (req, res) => {
 //======================================== DELETE /bgc/booking/:id
 router.delete('/deleteBooking/:id', async (req, res) => {
     
-    const bookingId = req.params.id;
+        const bookingId = req.params.id;
 
     try {
-        // 1. Fetch the booking record row from your database
-        const [rows] = await db.query('SELECT google_event_id FROM bgc_room_reserve WHERE id = ?', [bookingId]);
-        if (rows.length === 0) {
+        // 1. Fetch the targeted booking record row from your local database
+        // Destructure rows array using mysql2 promise syntax safely
+        const [rows] = await db.query(
+            'SELECT google_event_id FROM bgc_room_reserve WHERE id = ?', 
+            [bookingId]
+        );
+
+        if (!rows || rows.length === 0) {
             return res.json({ success: false, error: 'Booking not found.' });
         }
 
+        // mysql2 returns rows inside an array container. Fetch target index 0:
         const googleEventId = rows[0].google_event_id;
-        console.log( '=====MY GOOGLEEVENTID==>', googleEventId);
+        console.log('Found targeted Google Event ID:', googleEventId);
 
-        // 2. If a Google Event ID exists, send a deletion request to 
-
+        // 2. TARGETED API REMOVAL SEQUENCE
         if (googleEventId) {
             try {
-                await calendar.events.delete({
-                    calendarId: 'primary',
-                    eventId: googleEventId // Pass the unique string here
+                // FETCH USER REFRESH CREDENTIALS FROM DB OR FILE ENGINE HERE
+                // const [userTokenRows] = await db.query('SELECT refresh_token FROM your_auth_table WHERE...');
+                // const savedRefreshToken = userTokenRows[0].refresh_token;
+
+                // CRITICAL FIX STEP A: Pass the offline authorization credential keys back into your OAuth client wrapper
+                oauth2Client.setCredentials({
+                    refresh_token: process.env.GOOGLE_REFRESH_TOKEN // Or your dynamic saved user database variable string
                 });
-                console.log('Successfully removed event from Google Calendar');
-            } catch (gErr) {
-                console.error('Google Calendar deletion skipped/failed:', gErr.message);
-                // Note: If a user deletes the event manually on Google first, this catches the 404 gracefully
+
+                // Initialize service instance explicitly mapping your refreshed credentials context
+                const calendarService = google.calendar({ version: 'v3', auth: oauth2Client });
+
+                // CRITICAL FIX STEP B: Send the explicit deletion parameters to Google Calendar
+                await calendarService.events.delete({
+                    calendarId: 'primary', // Dynamic target pointing to the active authenticated calendar timeline log
+                    eventId: googleEventId // The string tracker code extracted from your SQL table
+                });
+
+                console.log('Event wiped from Google Calendar successfully.');
+
+            } catch (googleApiError) {
+                // If the event was deleted manually on calendar.google.com first, this catches the 404 cleanly
+                console.warn('Google API deletion notice (Skipped or already removed):', googleApiError.message);
             }
         }
 
-        // 3. Delete the booking row from your local database
+        // 3. Database clean up routine
         await db.query('DELETE FROM bgc_room_reserve WHERE id = ?', [bookingId]);
+        console.log(`Database record ID #${bookingId} deleted safely.`);
 
         return res.json({ success: true });
 
     } catch (err) {
-        console.error(err);
-        return res.status(500).json({ success: false, error: 'Database/Server exception error.' });
+        console.error('Critical breakdown within app.delete route control sequence:', err);
+        return res.status(500).json({ success: false, error: 'Internal system error while clearing booking records.' });
     }
+
 });
 
 //=====D-GROUP ENDPOINTS=========//
