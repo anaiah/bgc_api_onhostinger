@@ -905,7 +905,7 @@ router.post('/room-reserve', async (req, res) => {
 // THIS IS FOR DELETION OF BOOKING RECORD
 // DELETE /bgc/booking/:id
 // DELETE /delete-room-reserve/:id
-router.delete('/delete-room-reserve/:id', async (req, res) => {
+router.delete('/deleteBooking/:id', async (req, res) => {
     const { id } = req.params;
 
     if (!id) {
@@ -913,7 +913,7 @@ router.delete('/delete-room-reserve/:id', async (req, res) => {
     }
 
     try {
-        console.log(`==== Firing delete-room-reserve for ID: ${id} ====`);
+        console.log(`==== Firing deleteBooking for ID: ${id} ====`);
 
         // MySQL uses ? placeholder
         const sql = `DELETE FROM bgc_room_reserve WHERE id = ?`;
