@@ -813,7 +813,7 @@ router.get('/google/callback', async (req, res) => {
 //=============ACTUAL RESERVE====================//
 router.post('/room-reserve', async (req, res) => {
 
-    const { room_id, date_from, date_to, added_by } = req.body;
+    const { room_id, date_from, date_to, added_by, remarks } = req.body;
 
     const { google } = require('googleapis');
 
@@ -823,9 +823,9 @@ router.post('/room-reserve', async (req, res) => {
         await connection.beginTransaction();
 
         const [result] = await connection.query(
-            `INSERT INTO bgc_room_reserve (room_id, date_from, date_to, added_by)
-            VALUES (?, ?, ?, ?)`,
-            [room_id, date_from, date_to, added_by]
+            `INSERT INTO bgc_room_reserve (room_id, date_from, date_to, added_by, remarks)
+            VALUES (?, ?, ?, ?, ?)`,
+            [room_id, date_from, date_to, added_by, remarks]
         );
 
         const [rows] = await connection.query(
@@ -858,8 +858,8 @@ router.post('/room-reserve', async (req, res) => {
         const event = await calendar.events.insert({
             calendarId: 'primary',
             requestBody: {
-                summary: `${req.body.room_name} Reserved by: ${req.body.addedby_name }, ${req.body.ministry_name}`,
-                description: `Room/Table: ${ req.body.room_name}\nReserved by: ${req.body.addedby_name}`,
+                summary: `${req.body.room_name} Reserved by: ${req.body.addedby_name }}`,
+                description: `Room/Table: ${ req.body.room_name}\nReserved by: ${req.body.addedby_name}\nRemarks: ${req.body.remarks}`,
                 start: { dateTime:  startISO, timeZone: 'Asia/Manila'},
                 end: { dateTime: endISO, timeZone: 'Asia/Manila' }
             }
