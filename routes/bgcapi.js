@@ -903,40 +903,43 @@ router.post('/room-reserve', async (req, res) => {
 
 
 // THIS IS FOR DELETION OF BOOKING RECORD
-// DELETE /bgc/booking/:id
-// DELETE /delete-room-reserve/:id
+//======================================== DELETE /bgc/booking/:id
 router.delete('/deleteBooking/:id', async (req, res) => {
-    const { id } = req.params;
-
-    if (!id) {
-        return res.status(400).json({ success: false, error: 'ID is required' });
-    }
+    
+    const bookingId = req.params.id;
 
     try {
-        console.log(`==== Firing deleteBooking for ID: ${id} ====`);
-
-        // MySQL uses ? placeholder
-        const sql = `DELETE FROM bgc_room_reserve WHERE id = ?`;
-        
-        const [result] = await db.query(sql, [id]);
-
-        // In MySQL, result.affectedRows tells you if the row existed and was deleted
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ 
-                success: false, 
-                error: 'Booking not found or already deleted' 
-            });
+        // 1. Fetch the booking record row from your database
+        const [rows] = await db.execute('SELECT google_event_id FROM bgc_room_reserve WHERE id = ?', [bookingId]);
+        if (rows.length === 0) {
+            return res.json({ success: false, error: 'Booking not found.' });
         }
 
-        res.json({
-            success: true,
-            message: 'Reservation deleted successfully',
-            deletedId: id
-        });
+        const googleEventId = rows[0].google_event_id;
+
+        // 2. If a Google Event ID exists, send a deletion request to 
+
+        if (googleEventId) {
+            try {
+                await calendar.events.delete({
+                    calendarId: 'primary',
+                    eventId: googleEventId // Pass the unique string here
+                });
+                console.log('Successfully removed event from Google Calendar');
+            } catch (gErr) {
+                console.error('Google Calendar deletion skipped/failed:', gErr.message);
+                // Note: If a user deletes the event manually on Google first, this catches the 404 gracefully
+            }
+        }
+
+        // 3. Delete the booking row from your local database
+        await db.execute('DELETE FROM bgc_room_reserve WHERE id = ?', [bookingId]);
+
+        return res.json({ success: true });
 
     } catch (err) {
-        console.error('Error deleting reservation:', err);
-        res.status(500).json({ success: false, error: 'Server error' });
+        console.error(err);
+        return res.status(500).json({ success: false, error: 'Database/Server exception error.' });
     }
 });
 
