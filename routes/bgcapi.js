@@ -752,6 +752,7 @@ router.get('/getrooms/:date', async (req, res) => {
                             'date_from', rr.date_from,
                             'date_to', rr.date_to,
                             'added_by', rr.added_by,
+                            'remarks', rr.remarks,
                             'added_by_name', u.full_name,
                             'ministry', m.ministry_description
                         )
@@ -761,6 +762,7 @@ router.get('/getrooms/:date', async (req, res) => {
                     LEFT JOIN bgc_ministry m ON m.id = u.ministry_id
                     WHERE rr.room_id = r.id AND DATE(rr.date_from) = ?
                 ) AS reservations
+
             FROM bgc_rooms r
             ORDER BY r.room_description;
         `;
