@@ -908,71 +908,58 @@ router.post('/room-reserve', async (req, res) => {
 // THIS IS FOR DELETION OF BOOKING RECORD
 //======================================== DELETE /bgc/booking/:id
 router.delete('/deleteBooking/:id', async (req, res) => {
-    
-    const bookingId = req.params.id;
+    const reservationId = req.params.id;
 
     try {
-        // 1. Fetch the google_event_id from your database table
+        // 2. Fetch the Google Event ID from your MySQL table
+        // Replace 'reservations' and 'google_event_id' with your actual table/column names
         const [rows] = await db.query(
-            'SELECT google_event_id FROM bgc_room_reserve WHERE id = ?', 
-            [bookingId]
+            'SELECT google_event_id FROM reservations WHERE id = ?', 
+            [reservationId]
         );
 
-        const bookingRecord = Array.isArray(rows) ? rows[0] : rows;
-
-        if (!bookingRecord) {
-            return res.json({ success: false, error: 'Booking record not found.' });
+        if (rows.length === 0) {
+            return res.status(404).json({ error: 'Reservation not found in database.' });
         }
 
-        const googleEventId = bookingRecord.google_event_id;
-        console.log('Targeting Google Event ID for service removal:', googleEventId);
+        const googleEventId = rows[0].google_event_id;
 
-        // 2. AUTHENTICATE GOOGLE USING YOUR SERVICE ACCOUNT PROFILE KEY
+        // 3. Delete from Google Calendar first
         if (googleEventId) {
             try {
-                // Ensure your Hostinger process variables can read the credentials string safely
-                if (!process.env.GOOGLE_JSON_KEY) {
-                    throw new Error("GOOGLE_JSON_KEY environment variable is missing on Hostinger dashboard configurations.");
-                }
-
-                // Parse the service credentials JSON payload out of your environment settings
-                const serviceAccountCredentials = JSON.parse(process.env.GOOGLE_JSON_KEY);
-
-                console.log('serviceauth ', serviceAccountCredentials.client_email, serviceAccountCredentials.private_key)
-                // Initialize a permanent JWT connection using your exact service account credentials payload
-                const serviceAuth = new google.auth.JWT(
-                    serviceAccountCredentials.client_email,
-                    null,
-                    serviceAccountCredentials.private_key,
-                    ['https://googleapis.com/auth/calendar']
-                );
-
-                // Build your calendar service wrapper using the service account credentials context
-                const calendarService = google.calendar({ version: 'v3', auth: serviceAuth });
-
-                // Send the deletion request to your calendar timeline log
-                await calendarService.events.delete({
-                    calendarId: 'primary', // Targets the calendar shared with the service email profile
-                    eventId: googleEventId
+                await calendar.events.delete({
+                    calendarId: 'anaiahdaniel@gmail.com', // Use your email, not 'primary'
+                    eventId: googleEventId,
                 });
-
-                console.log('Success! Event removed from Google Calendar via Service Account keys.');
-
-            } catch (googleApiError) {
-                // Catches manual deletes gracefully without halting your local execution chains
-                console.warn('Google Calendar sync notice (Skipped or already gone):', googleApiError.message);
+                console.log('Event deleted from Google Calendar');
+            } catch (googleError) {
+                // If the event was already deleted manually in Google, it returns 404 or 410.
+                // We handle this so the database record still gets deleted.
+                if (googleError.code === 404 || googleError.code === 410) {
+                    console.log('Event already missing from Google Calendar.');
+                } else {
+                    // If it's a permission or network error, throw it to the main catch block
+                    throw googleError;
+                }
             }
         }
 
-        // 3. Clear the row record completely from your MySQL database table
-        await db.query('DELETE FROM bgc_room_reserve WHERE id = ?', [bookingId]);
-        console.log(`Local reservation table row key #${bookingId} successfully purged.`);
+        // 4. Delete from MySQL table
+        await db.query('DELETE FROM reservations WHERE id = ?', [reservationId]);
 
-        return res.json({ success: true });
+        console.log('Reservation deleted from database and Google Calendar (if it existed).');
+        
+        return res.status(200).json({ 
+            success: true, 
+            message: 'Reservation removed from database and Google Calendar.' 
+        });
 
-    } catch (err) {
-        console.error('Critical crash during system delete control chain execution:', err);
-        return res.status(500).json({ success: false, error: 'Database exception occurred while processing deletion.' });
+    } catch (error) {
+        console.error('Error in delete reservation endpoint:', error);
+        return res.status(500).json({ 
+            error: 'Internal Server Error', 
+            details: error.message 
+        });
     }
 
 });
