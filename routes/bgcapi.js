@@ -938,12 +938,13 @@ router.delete('/deleteBooking/:id', async (req, res) => {
                 // Parse the service credentials JSON payload out of your environment settings
                 const serviceAccountCredentials = JSON.parse(process.env.GOOGLE_JSON_KEY);
 
+                console.log('serviceauth ', serviceAccountCredentials.client_email, serviceAccountCredentials.private_key)
                 // Initialize a permanent JWT connection using your exact service account credentials payload
                 const serviceAuth = new google.auth.JWT(
                     serviceAccountCredentials.client_email,
                     null,
                     serviceAccountCredentials.private_key,
-                    ['https://googleapis.com']
+                    ['https://googleapis.com/auth/calendar']
                 );
 
                 // Build your calendar service wrapper using the service account credentials context
