@@ -813,13 +813,12 @@ router.get('/google/callback', async (req, res) => {
 });
 
 //=============ACTUAL RESERVE====================//
+const { google } = require('googleapis');
+
 router.post('/room-reserve', async (req, res) => {
 
     console.log('**** FIRED ROOM RESERVATION ENDPOINT() ****', req.body)
     const { room_id, date_from, date_to, added_by, room_name, remarks } = req.body;
-
-    const { google } = require('googleapis');
-
     const connection = await db.getConnection();
 
     try {
@@ -900,74 +899,78 @@ router.post('/room-reserve', async (req, res) => {
 
 }); //===================END RESERVATION=========================//
 
-// router.post('/room-reserve', async (req, res) => {
-//     const { room_id, date_from, date_to, added_by } = req.body;
-//     try {
-//         const sql = `INSERT INTO bgc_room_reserve (room_id, date_from, date_to, added_by) VALUES (?, ?, ?, ?)`;
-//         const [result] = await db.query(sql, [room_id, date_from, date_to, added_by]);
-//         res.json({ success: true, id: result.insertId });
-//     } catch (err) {
-//         res.status(500).json({ success: false, error: err.message });
-//     }
-// });
-
 
 // THIS IS FOR DELETION OF BOOKING RECORD
 //======================================== DELETE /bgc/booking/:id
 router.delete('/deleteBooking/:id', async (req, res) => {
+        console.log('**** FIRED DELETE BOOKING ENDPOINT() ****', req.params.id);
     const reservationId = req.params.id;
+    const connection = await db.getConnection();
 
     try {
-        // 2. Fetch the Google Event ID from your MySQL table
-        // Replace 'reservations' and 'google_event_id' with your actual table/column names
-        const [rows] = await db.query(
-            'SELECT google_event_id FROM bgc_room_reserve WHERE id = ?', 
+        await connection.beginTransaction();
+
+        // 1. Get the Google Event ID before deleting the record
+        const [reservation] = await connection.query(
+            `SELECT google_event_id FROM bgc_room_reserve WHERE id = ?`,
             [reservationId]
         );
 
-        if (rows.length === 0) {
-            return res.status(404).json({ error: 'Reservation not found in database.' });
+        if (reservation.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ success: false, message: 'Reservation not found.' });
         }
 
-        const googleEventId = rows[0].google_event_id;
+        const googleEventId = reservation[0].google_event_id;
 
-        // 3. Delete from Google Calendar first
-        if (googleEventId) {
+        // 2. Get the OAuth credentials (matching your reserve logic)
+        const [oauthRows] = await connection.query(
+            `SELECT refresh_token FROM google_oauth WHERE id = 1 LIMIT 1`
+        );
+
+        // 3. If we have a Google Event ID and a Refresh Token, try to delete from Google
+        if (googleEventId && oauthRows.length > 0 && oauthRows[0].refresh_token) {
             try {
+                const oauth2Client = new google.auth.OAuth2(
+                    process.env.GOOGLE_CLIENT_ID,
+                    process.env.GOOGLE_CLIENT_SECRET,
+                    process.env.GOOGLE_REDIRECT_URI
+                );
+
+                oauth2Client.setCredentials({ refresh_token: oauthRows[0].refresh_token });
+                const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+
+                // Delete from the specific calendar
                 await calendar.events.delete({
-                    calendarId: 'anaiahdaniel@gmail.com', // Use your email, not 'primary'
-                    eventId: googleEventId,
+                    calendarId: 'anaiahdaniel@gmail.com', 
+                    eventId: googleEventId
                 });
-                console.log('Event deleted from Google Calendar');
-            } catch (googleError) {
-                // If the event was already deleted manually in Google, it returns 404 or 410.
-                // We handle this so the database record still gets deleted.
-                if (googleError.code === 404 || googleError.code === 410) {
-                    console.log('Event already missing from Google Calendar.');
+                
+                console.log('Successfully removed from Google Calendar');
+            } catch (gErr) {
+                // If the event was already deleted in Google, don't crash, just log it
+                if (gErr.code === 404 || gErr.code === 410) {
+                    console.log('Event already gone from Google Calendar.');
                 } else {
-                    // If it's a permission or network error, throw it to the main catch block
-                    throw googleError;
+                    throw gErr; // Re-throw other errors (auth, network, etc.)
                 }
             }
         }
 
-        // 4. Delete from MySQL table
-        await db.query('DELETE FROM bgc_room_reserve WHERE id = ?', [reservationId]);
+        // 4. Delete from MySQL
+        await connection.query(`DELETE FROM bgc_room_reserve WHERE id = ?`, [reservationId]);
 
-        console.log('Reservation deleted from database and Google Calendar (if it existed).');
+        await connection.commit();
+        res.json({ success: true, message: 'Reservation deleted from DB and Google Calendar' });
 
-        return res.status(200).json({ 
-            success: true, 
-            message: 'Reservation removed from database and Google Calendar.' 
-        });
-
-    } catch (error) {
-        console.error('Error in delete reservation endpoint:', error);
-        return res.status(500).json({ 
-            error: 'Internal Server Error', 
-            details: error.message 
-        });
+    } catch (err) {
+        console.log('Error during deletion process:', err);
+        await connection.rollback();
+        res.status(500).json({ success: false, error: err.message });
+    } finally {
+        connection.release();
     }
+
 
 });
 
