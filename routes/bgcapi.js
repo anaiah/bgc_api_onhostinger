@@ -909,13 +909,16 @@ router.post('/room-reserve', async (req, res) => {
 //======================================== DELETE /bgc/booking/:id
 router.delete('/deleteBooking/:id', async (req, res) => {
     
-        const bookingId = req.params.id;
+    const bookingId = req.params.id;
 
     try {
-        // 1. Fetch the targeted booking record row from your local database
-        // Destructure rows array using mysql2 promise syntax safely
-        const [rows] = await db.query(
-            'SELECT google_event_id FROM bgc_room_reserve WHERE id = ?', 
+        // 1. Fetch BOTH the google_event_id AND the user's refresh token context from your database
+        // (Assuming you have an added_by relational user column link)
+        const [rows] = await db.query(`
+            SELECT br.google_event_id, ut.refresh_token 
+            FROM bgc_room_reserve br
+            LEFT JOIN bgc_user_tokens ut ON br.added_by = ut.user_id 
+            WHERE br.id = ?`, 
             [bookingId]
         );
 
@@ -923,48 +926,52 @@ router.delete('/deleteBooking/:id', async (req, res) => {
             return res.json({ success: false, error: 'Booking not found.' });
         }
 
-        // mysql2 returns rows inside an array container. Fetch target index 0:
         const googleEventId = rows[0].google_event_id;
-        console.log('Found targeted Google Event ID:', googleEventId);
+        
+        // FALLBACK FLOW: If you haven't built a tokens table yet, pull a global admin token from your .env 
+        const activeRefreshToken = rows[0].refresh_token || process.env.GOOGLE_REFRESH_TOKEN;
 
-        // 2. TARGETED API REMOVAL SEQUENCE
+        console.log('Targeting Google Event ID:', googleEventId);
+
+        // 2. RUN EXTRACTION PROTECTION
         if (googleEventId) {
             try {
-                // FETCH USER REFRESH CREDENTIALS FROM DB OR FILE ENGINE HERE
-                // const [userTokenRows] = await db.query('SELECT refresh_token FROM your_auth_table WHERE...');
-                // const savedRefreshToken = userTokenRows[0].refresh_token;
+                // SECURITY AUDIT VALIDATION CHECK
+                if (!activeRefreshToken) {
+                    throw new Error("Critical Stop: Database or Environment Variable is missing your valid GOOGLE_REFRESH_TOKEN string profile.");
+                }
 
-                // CRITICAL FIX STEP A: Pass the offline authorization credential keys back into your OAuth client wrapper
+                // A. Force the global OAuth client object to load your long-lived background refresh token string
                 oauth2Client.setCredentials({
-                    refresh_token: process.env.GOOGLE_REFRESH_TOKEN // Or your dynamic saved user database variable string
+                    refresh_token: activeRefreshToken
                 });
 
-                // Initialize service instance explicitly mapping your refreshed credentials context
+                // B. Generate the authenticated client mapping profile instance
                 const calendarService = google.calendar({ version: 'v3', auth: oauth2Client });
 
-                // CRITICAL FIX STEP B: Send the explicit deletion parameters to Google Calendar
+                // C. Send the deletion request parameters securely
                 await calendarService.events.delete({
-                    calendarId: 'primary', // Dynamic target pointing to the active authenticated calendar timeline log
-                    eventId: googleEventId // The string tracker code extracted from your SQL table
+                    calendarId: 'primary',
+                    eventId: googleEventId
                 });
 
-                console.log('Event wiped from Google Calendar successfully.');
+                console.log('Success! Event fully erased from Google Calendar dashboard.');
 
             } catch (googleApiError) {
-                // If the event was deleted manually on calendar.google.com first, this catches the 404 cleanly
+                // Captures validation failures or manual external calendar 404 deletes gracefully
                 console.warn('Google API deletion notice (Skipped or already removed):', googleApiError.message);
             }
         }
 
-        // 3. Database clean up routine
+        // 3. Complete database row deletion cleanup routine
         await db.query('DELETE FROM bgc_room_reserve WHERE id = ?', [bookingId]);
-        console.log(`Database record ID #${bookingId} deleted safely.`);
+        console.log(`Local reservation table row item record #${bookingId} purged.`);
 
         return res.json({ success: true });
 
     } catch (err) {
-        console.error('Critical breakdown within app.delete route control sequence:', err);
-        return res.status(500).json({ success: false, error: 'Internal system error while clearing booking records.' });
+        console.error('Critical crash during system delete control chain execution:', err);
+        return res.status(500).json({ success: false, error: 'Server validation breakdown while updating booking records.' });
     }
 
 });
