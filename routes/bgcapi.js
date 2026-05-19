@@ -859,12 +859,19 @@ router.post('/room-reserve', async (req, res) => {
         const endISO = req.body.date_to.replace(" ", "T");
 
         const event = await calendar.events.insert({
-            calendarId: 'primary',
+            //calendarId: 'primary', //change to prdbarrion@gmail.com
+            calendarId: 'anaiahdaniel@gmail.com', // Use your email, not 'primary'
+
             requestBody: {
                 summary: `${req.body.room_name}\nReserved by: ${req.body.addedby_name}\nRemarks: ${req.body.remarks}`,
                 description: `Room/Table: ${ req.body.room_name}\nReserved by: ${req.body.addedby_name}\nRemarks: ${req.body.remarks}`,
                 start: { dateTime:  startISO, timeZone: 'Asia/Manila'},
-                end: { dateTime: endISO, timeZone: 'Asia/Manila' }
+                end: { dateTime: endISO, timeZone: 'Asia/Manila' },
+                attendees: [
+                    { email: 'anaiahdaniel@gmail.com' },
+                    { email: 'prdbarrion@gmail.com' }
+                    // Add more attendees if needed
+                ]
             }
         });
 
