@@ -860,7 +860,7 @@ router.post('/room-reserve', async (req, res) => {
         const event = await calendar.events.insert({
             calendarId: 'primary',
             requestBody: {
-                summary: `${req.body.room_name} Reserved by: ${req.body.addedby_name }}`,
+                summary: `${req.body.room_name}\nReserved by: ${req.body.addedby_name}\nRemarks: ${req.body.remarks}`,
                 description: `Room/Table: ${ req.body.room_name}\nReserved by: ${req.body.addedby_name}\nRemarks: ${req.body.remarks}`,
                 start: { dateTime:  startISO, timeZone: 'Asia/Manila'},
                 end: { dateTime: endISO, timeZone: 'Asia/Manila' }
