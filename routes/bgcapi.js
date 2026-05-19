@@ -815,7 +815,8 @@ router.get('/google/callback', async (req, res) => {
 //=============ACTUAL RESERVE====================//
 router.post('/room-reserve', async (req, res) => {
 
-    const { room_id, date_from, date_to, added_by, remarks } = req.body;
+    console.log('**** FIRED ROOM RESERVATION ENDPOINT() ****', req.body)
+    const { room_id, date_from, date_to, added_by, room_name, remarks } = req.body;
 
     const { google } = require('googleapis');
 
@@ -910,7 +911,7 @@ router.delete('/deleteBooking/:id', async (req, res) => {
 
     try {
         // 1. Fetch the booking record row from your database
-        const [rows] = await db.execute('SELECT google_event_id FROM bgc_room_reserve WHERE id = ?', [bookingId]);
+        const [rows] = await db.query('SELECT google_event_id FROM bgc_room_reserve WHERE id = ?', [bookingId]);
         if (rows.length === 0) {
             return res.json({ success: false, error: 'Booking not found.' });
         }
@@ -933,7 +934,7 @@ router.delete('/deleteBooking/:id', async (req, res) => {
         }
 
         // 3. Delete the booking row from your local database
-        await db.execute('DELETE FROM bgc_room_reserve WHERE id = ?', [bookingId]);
+        await db.query('DELETE FROM bgc_room_reserve WHERE id = ?', [bookingId]);
 
         return res.json({ success: true });
 
