@@ -912,66 +912,51 @@ router.delete('/deleteBooking/:id', async (req, res) => {
     const bookingId = req.params.id;
 
     try {
-        // 1. Fetch BOTH the google_event_id AND the user's refresh token context from your database
-        // (Assuming you have an added_by relational user column link)
-        const [rows] = await db.query(`
-            SELECT br.google_event_id, ut.refresh_token 
-            FROM bgc_room_reserve br
-            LEFT JOIN bgc_user_tokens ut ON br.added_by = ut.user_id 
-            WHERE br.id = ?`, 
+        // 1. Fetch ONLY the google_event_id directly from your valid table
+        const [rows] = await db.query(
+            'SELECT google_event_id FROM bgc_room_reserve WHERE id = ?', 
             [bookingId]
         );
 
-        if (!rows || rows.length === 0) {
-            return res.json({ success: false, error: 'Booking not found.' });
+        // Safely extract the database record object row
+        const bookingRecord = Array.isArray(rows) ? rows[0] : rows;
+
+        if (!bookingRecord) {
+            return res.json({ success: false, error: 'Booking record not found.' });
         }
 
-        const googleEventId = rows[0].google_event_id;
-        
-        // FALLBACK FLOW: If you haven't built a tokens table yet, pull a global admin token from your .env 
-        const activeRefreshToken = rows[0].refresh_token || process.env.GOOGLE_REFRESH_TOKEN;
+        const googleEventId = bookingRecord.google_event_id;
+        console.log('Targeting Google Event ID for removal:', googleEventId);
 
-        console.log('Targeting Google Event ID:', googleEventId);
-
-        // 2. RUN EXTRACTION PROTECTION
+        // 2. Clear out the item from Google Calendar if the ID is valid
         if (googleEventId) {
             try {
-                // SECURITY AUDIT VALIDATION CHECK
-                if (!activeRefreshToken) {
-                    throw new Error("Critical Stop: Database or Environment Variable is missing your valid GOOGLE_REFRESH_TOKEN string profile.");
-                }
-
-                // A. Force the global OAuth client object to load your long-lived background refresh token string
-                oauth2Client.setCredentials({
-                    refresh_token: activeRefreshToken
-                });
-
-                // B. Generate the authenticated client mapping profile instance
+                // Ensure your OAuth client object retains the credentials 
+                // that were verified during your successful registration sequence
                 const calendarService = google.calendar({ version: 'v3', auth: oauth2Client });
 
-                // C. Send the deletion request parameters securely
                 await calendarService.events.delete({
-                    calendarId: 'primary',
+                    calendarId: 'primary', // Deletes directly from the authenticated user timeline log
                     eventId: googleEventId
                 });
 
-                console.log('Success! Event fully erased from Google Calendar dashboard.');
+                console.log('Success! Event removed from Google Calendar dashboard views.');
 
             } catch (googleApiError) {
-                // Captures validation failures or manual external calendar 404 deletes gracefully
-                console.warn('Google API deletion notice (Skipped or already removed):', googleApiError.message);
+                // Catches manual 404 deletions gracefully without breaking your local script sequence
+                console.warn('Google Calendar sync notice (Skipped or already gone):', googleApiError.message);
             }
         }
 
-        // 3. Complete database row deletion cleanup routine
+        // 3. Clear the row record cleanly from your MySQL database table
         await db.query('DELETE FROM bgc_room_reserve WHERE id = ?', [bookingId]);
-        console.log(`Local reservation table row item record #${bookingId} purged.`);
+        console.log(`Local reservation table row key #${bookingId} successfully purged.`);
 
         return res.json({ success: true });
 
     } catch (err) {
         console.error('Critical crash during system delete control chain execution:', err);
-        return res.status(500).json({ success: false, error: 'Server validation breakdown while updating booking records.' });
+        return res.status(500).json({ success: false, error: 'Database exception occurred while processing deletion.' });
     }
 
 });
