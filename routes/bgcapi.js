@@ -883,6 +883,8 @@ router.post('/room-reserve', async (req, res) => {
         });
 
     } catch (err) {
+        console.log('Error during reservation process:', err);
+
         await connection.rollback();
         res.status(500).json({ success: false, error: err.message });
     } finally {
@@ -917,6 +919,7 @@ router.delete('/deleteBooking/:id', async (req, res) => {
         }
 
         const googleEventId = rows[0].google_event_id;
+        console.log( '=====MY GOOGLEEVENTID==>', googleEventId);
 
         // 2. If a Google Event ID exists, send a deletion request to 
 
