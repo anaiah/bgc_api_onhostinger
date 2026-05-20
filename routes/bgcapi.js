@@ -859,7 +859,7 @@ router.post('/room-reserve', async (req, res) => {
 
         const event = await calendar.events.insert({
             //calendarId: 'primary', //change to prdbarrion@gmail.com
-            calendarId: 'anaiahdaniel@gmail.com', // Use your email, not 'primary'
+            calendarId: 'prdbarrion@gmail.com', // Use your email, not 'primary'
 
             requestBody: {
                 summary: `${req.body.room_name}\nReserved by: ${req.body.addedby_name}\nRemarks: ${req.body.remarks}`,
@@ -942,7 +942,7 @@ router.delete('/deleteBooking/:id', async (req, res) => {
 
                 // Delete from the specific calendar
                 await calendar.events.delete({
-                    calendarId: 'anaiahdaniel@gmail.com', 
+                    calendarId: 'prdbarrion@gmail.com', 
                     eventId: googleEventId
                 });
                 
