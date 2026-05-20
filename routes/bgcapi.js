@@ -862,13 +862,14 @@ router.post('/room-reserve', async (req, res) => {
             calendarId: 'prdbarrion@gmail.com', // Use your email, not 'primary'
 
             requestBody: {
-                summary: `${req.body.room_name}\nReserved by: ${req.body.addedby_name}\nRemarks: ${req.body.remarks}`,
+                summary: `${req.body.room_name},\n ${req.body.addedby_name}\nRemarks: ${req.body.remarks}`,
                 description: `Room/Table: ${ req.body.room_name}\nReserved by: ${req.body.addedby_name}\nRemarks: ${req.body.remarks}`,
                 start: { dateTime:  startISO, timeZone: 'Asia/Manila'},
                 end: { dateTime: endISO, timeZone: 'Asia/Manila' },
                 attendees: [
                     { email: 'anaiahdaniel@gmail.com' },
-                    { email: 'prdbarrion@gmail.com' }
+                    { email: 'prdbarrion@gmail.com' },
+                    { email: req.body.addedby_email }
                     // Add more attendees if needed
                 ]
             }
@@ -903,7 +904,8 @@ router.post('/room-reserve', async (req, res) => {
 // THIS IS FOR DELETION OF BOOKING RECORD
 //======================================== DELETE /bgc/booking/:id
 router.delete('/deleteBooking/:id', async (req, res) => {
-        console.log('**** FIRED DELETE BOOKING ENDPOINT() ****', req.params.id);
+    
+    console.log('**** FIRED DELETE BOOKING ENDPOINT() ****', req.params.id);
     const reservationId = req.params.id;
     const connection = await db.getConnection();
 
