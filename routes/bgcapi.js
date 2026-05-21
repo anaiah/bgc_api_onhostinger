@@ -866,12 +866,13 @@ router.post('/room-reserve', async (req, res) => {
                 description: `Room/Table: ${ req.body.room_name}\nReserved by: ${req.body.addedby_name}\nRemarks: ${req.body.remarks}`,
                 start: { dateTime:  startISO, timeZone: 'Asia/Manila'},
                 end: { dateTime: endISO, timeZone: 'Asia/Manila' },
-                attendees: [
-                    { email: 'anaiahdaniel@gmail.com' },
-                    { email: 'prdbarrion@gmail.com' },
-                    { email: req.body.addedby_email }
-                    // Add more attendees if needed
-                ]
+
+                // attendees: [
+                //     { email: 'anaiahdaniel@gmail.com' },
+                //     { email: 'prdbarrion@gmail.com' },
+                //     { email: req.body.addedby_email }
+                //     // Add more attendees if needed
+                // ]
             }
         });
 
@@ -1049,11 +1050,70 @@ router.post('/register-leader', async (req, res) => {
     }
 });
 
+router.get('/testmail', async(req,res)=>	{
+
+  let transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: 'adminbesi@gmail.com',
+      pass: 'eumgsmqfjrebyxvn'
+    },
+     tls:{
+            rejectUnauthorized:false
+        }
+  });
+
+  try {
+
+    let htmltemp = `<html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta http-equiv="X-UA-Compatible" content="IE=edge">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Document</title>
+        </head>
+        <body>
+            Dear User,<br><br>Thank you for your Data Entry.<br><br>
+            <font color=red>PLS. DO NOT REPLY, THIS IS A SYSTEM GENERATED EMAIL.</font>
+            <br><br><br><br>        </body>
+        </html>	`
+
+    
+        const mailOptions = {
+            from: '"ADMIN @ BESI" <noreply@asianowapp.com>',
+
+            to: '"Caloy" <anaiahdaniel@gmail.com>',
+            subject: `== APPROVED entry==`,
+            html: htmltemp,
+            
+        }
+        
+        transporter.sendMail(mailOptions,(err,info)=>{
+            if(err){
+                console.log('nope',err)
+                res.json({status:false})
+            }else{
+                //=== RETURN RESULT ===//
+                console.log('**** MAIL SENT! *****')
+                                                        
+                res.json({
+                    message: "UPDATED Successfully!",
+                    voice:"Equipment Updated Successfully!"
+                })
+                
+                //end Utils.deletepdf
+            }//===eif
+        })//=========end/ transport email
+  } catch (err) {
+    console.error('Error sending mail:', err);
+  }
+}) //===== end testmail =====
+
+
 router.get('/testis', async (req,res) => {
         console.log('FRING TESTIS IN API.JS')
         res.status(200).send('ok')
 })
-
 
 //===test menu-submenu array->json--->
 router.get('/menu/:grpid', async(req,res)=>{
