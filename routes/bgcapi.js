@@ -868,6 +868,9 @@ router.post('/room-reserve', async (req, res) => {
                 end: { dateTime: endISO, timeZone: 'Asia/Manila' },
 
                 attendees: [
+                    
+                    { email: 'anaiahdaniel@gmail.com'},
+                    { email: 'prdbarrion@gmail.com' },
                     { email: req.body.addedby_email }
                     // Add more attendees if needed
                 ]
