@@ -862,7 +862,7 @@ router.post('/room-reserve', async (req, res) => {
             calendarId: 'prdbarrion@gmail.com', // Use your email, not 'primary'
             sendUpdates: 'none', 
             requestBody: {
-                summary: `${req.body.room_name},\n ${req.body.addedby_name} \nRemarks: ${req.body.remarks}`,
+                summary: `${req.body.remarks.toUpperCase()} - ${req.body.room_name},\n ${req.body.addedby_name} `,
                 description: `Room/Table: ${ req.body.room_name}\nReserved by: ${req.body.addedby_name}, (${req.body.addedby_email})\nRemarks: ${req.body.remarks}`,
                 start: { dateTime:  startISO, timeZone: 'Asia/Manila'},
                 end: { dateTime: endISO, timeZone: 'Asia/Manila' },
