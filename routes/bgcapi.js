@@ -860,19 +860,17 @@ router.post('/room-reserve', async (req, res) => {
         const event = await calendar.events.insert({
             //calendarId: 'primary', //change to prdbarrion@gmail.com
             calendarId: 'prdbarrion@gmail.com', // Use your email, not 'primary'
-
+            sendUpdates: 'none', 
             requestBody: {
-                summary: `${req.body.room_name},\n ${req.body.addedby_name}\nRemarks: ${req.body.remarks}`,
-                description: `Room/Table: ${ req.body.room_name}\nReserved by: ${req.body.addedby_name}\nRemarks: ${req.body.remarks}`,
+                summary: `${req.body.room_name},\n ${req.body.addedby_name} \nRemarks: ${req.body.remarks}`,
+                description: `Room/Table: ${ req.body.room_name}\nReserved by: ${req.body.addedby_name}, (${req.body.addedby_email})\nRemarks: ${req.body.remarks}`,
                 start: { dateTime:  startISO, timeZone: 'Asia/Manila'},
                 end: { dateTime: endISO, timeZone: 'Asia/Manila' },
 
-                // attendees: [
-                //     { email: 'anaiahdaniel@gmail.com' },
-                //     { email: 'prdbarrion@gmail.com' },
-                //     { email: req.body.addedby_email }
-                //     // Add more attendees if needed
-                // ]
+                attendees: [
+                    { email: req.body.addedby_email }
+                    // Add more attendees if needed
+                ]
             }
         });
 
