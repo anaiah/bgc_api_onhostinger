@@ -857,7 +857,7 @@ router.post('/room-reserve', async (req, res) => {
         const startISO = req.body.date_from.replace(" ", "T");
         const endISO = req.body.date_to.replace(" ", "T");
 
-        const event = await calendar.events.insert({
+        const event = await calendar.events.insert({ 
             //calendarId: 'primary', //change to prdbarrion@gmail.com
             calendarId: 'prdbarrion@gmail.com', // Use your email, not 'primary'
             sendUpdates: 'none', 
