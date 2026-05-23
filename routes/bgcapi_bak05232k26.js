@@ -814,6 +814,7 @@ router.get('/google/callback', async (req, res) => {
 
 //=============ACTUAL RESERVE====================//
 //const { google } = require('googleapis');
+
 router.post('/room-reserve', async (req, res) => {
 
     console.log('**** FIRED ROOM RESERVATION ENDPOINT() ****', req.body)
@@ -821,43 +822,6 @@ router.post('/room-reserve', async (req, res) => {
     const connection = await db.getConnection();
 
     try {
-        // === ACCESS CONTROL GATES ===
-        const userId = Number(added_by);
-        const targetRoomId = Number(room_id);
-        const restrictedRooms = [1, 3, 4, 5];
-
-        // RULE 1: User 89 has unlimited booking rights everywhere and skips all filters.
-        // RULE 2: Standard users are restricted to a maximum of 2 bookings per room for rooms 1, 3, 4, and 5.
-        if (userId !== 89 && restrictedRooms.includes(targetRoomId)) {
-            
-            // Extract Year and Month from date_from (e.g., '2026-05-23 14:00:00' becomes '2026-05')
-            const bookingYearMonth = date_from.substring(0, 7);
-
-            // Fetch the user's booking count for this individual room inside the current calendar month
-            const [dbResultRows] = await connection.query(
-                `SELECT COUNT(id) AS total_bookings FROM bgc_room_reserve
-                WHERE added_by = ?
-                AND room_id = ?
-                AND DATE_FORMAT(date_from, '%Y-%m') = ?`,
-                [userId, targetRoomId, bookingYearMonth]
-            );
-
-            // SAFE EXTRACTION: Grab row index 0 explicitly without confusing variable destructuring
-            const existingBookingsForThisRoom = dbResultRows && dbResultRows[0] ? dbResultRows[0].total_bookings : 0;
-            console.log(`User ${userId} has ${existingBookingsForThisRoom} active bookings for room ${targetRoomId}`);
-
-            // Enforce Rule 2: If 2 bookings already exist, terminate the 3rd booking attempt immediately
-            if (existingBookingsForThisRoom >= 2) {
-                return res.status(200).json({
-                    success: false,
-                    limitExceeded: true,
-                    message: `Reservation rejected. Non-admin users are restricted to 2 active bookings for ${room_name} per month. Your 3rd booking attempt has been blocked.`
-                });
-            }
-
-        }
-        // === END OF ACCESS CONTROL GATES ===
-
         await connection.beginTransaction();
 
         const [result] = await connection.query(
@@ -926,30 +890,18 @@ router.post('/room-reserve', async (req, res) => {
             google_event_id: event.data.id,
             message: 'Reservation and calendar event created'
         });
+
     } catch (err) {
         console.log('Error during reservation process:', err);
 
-        // Safe transaction rollback block: Only run if a transaction was active
-        try {
-            // Check if connection has an active transaction state property
-            if (connection && connection.beginTransaction && connection._transactionStarted) {
-                await connection.rollback();
-            }
-        } catch (rollbackErr) {
-            console.log('Rollback ignored or not needed:', rollbackErr.message);
-        }
-       
+        await connection.rollback();
         res.status(500).json({ success: false, error: err.message });
     } finally {
-        // This single block now handles freeing the connection stream for BOTH success, limit rejects, and errors safely.
-        if (connection) connection.release();
+        connection.release();
     }
-
-
 
 }); //===================END RESERVATION=========================//
 
-//===================END RESERVATION=========================//
 
 // THIS IS FOR DELETION OF BOOKING RECORD
 //======================================== DELETE /bgc/booking/:id
@@ -959,7 +911,7 @@ router.delete('/deleteBooking/:id', async (req, res) => {
     const reservationId = req.params.id;
     const connection = await db.getConnection();
 
-    try {   
+    try {
         await connection.beginTransaction();
 
         // 1. Get the Google Event ID before deleting the record
