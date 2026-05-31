@@ -1323,7 +1323,7 @@ router.post('/room-reserve', async (req, res) => {
 
         const event = await calendar.events.insert({ 
             //calendarId: 'primary', //change to prdbarrion@gmail.com
-            calendarId: 'prdbarrion@gmail.com', // Use your email, not 'primary'
+            calendarId: 'ccfbgc@gmail.com', // Use your email, not 'primary'
             sendUpdates: 'none', 
             requestBody: {
                 summary: `${req.body.remarks.toUpperCase()} - ${req.body.room_name},\n ${req.body.addedby_name} `,
@@ -1334,7 +1334,7 @@ router.post('/room-reserve', async (req, res) => {
                 attendees: [
                     
                     { email: 'anaiahdaniel@gmail.com'},
-                    { email: 'prdbarrion@gmail.com' },
+                    { email: 'ccfbgc@gmail.com' },
                     { email: req.body.addedby_email }
                     // Add more attendees if needed
                 ]
@@ -1422,7 +1422,7 @@ router.delete('/deleteBooking/:id', async (req, res) => {
 
                 // Delete from the specific calendar
                 await calendar.events.delete({
-                    calendarId: 'prdbarrion@gmail.com', 
+                    calendarId: 'ccfbgc@gmail.com', 
                     eventId: googleEventId
                 });
                 
