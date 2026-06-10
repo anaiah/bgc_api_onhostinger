@@ -271,106 +271,6 @@ router.post('/save-target', async (req, res) => {
     }
 });
 
-
-app.get('/api/export-ministry-report', async (req, res) => {
-    try {
-        const sql = `... your SQL query ...`; 
-        const [rows] = await db.query(sql);
-
-        const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet('Ministry Report');
-
-        // 1. HEADERS (Rows 1-4)
-        worksheet.mergeCells('A1:P1'); // Extended to P for the AVG column
-        worksheet.getCell('A1').value = 'CCF BGC';
-        worksheet.getCell('A1').font = { bold: true, size: 14 };
-
-        worksheet.mergeCells('A2:P2');
-        worksheet.getCell('A2').value = 'MINISTRY PERFORMANCE SUMMARY';
-        worksheet.getCell('A2').font = { bold: true, size: 12 };
-
-        worksheet.mergeCells('A3:P3');
-        worksheet.getCell('A3').value = `As of: ${new Date().toLocaleDateString()}`;
-
-        // 2. TABLE HEADERS (Row 5) - Added "AVG"
-        const headers = ["Ministry", "FY Target", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "AVG"];
-        const headerRow = worksheet.getRow(5);
-        headerRow.values = headers;
-
-        headerRow.eachCell((cell) => {
-            cell.font = { bold: true };
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
-            cell.border = { bottom: { style: 'thin' } };
-        });
-
-        // 3. DATA ROWS
-        let currentRow = 6;
-        let lastGrp = "";
-
-        rows.forEach((row) => {
-            // Group Header Styling (Dark Background, White Text)
-            if (row.rpt_grp !== lastGrp) {
-                worksheet.mergeCells(`A${currentRow}:P${currentRow}`);
-                const groupCell = worksheet.getCell(`A${currentRow}`);
-                groupCell.value = row.rpt_grp.toUpperCase();
-                groupCell.font = { bold: true, color: { argb: 'FFFFFFFF' } }; // White Text
-                groupCell.fill = {
-                    type: 'pattern',
-                    pattern: 'solid',
-                    fgColor: { argb: 'FF444444' } // Dark Grey Background
-                };
-                lastGrp = row.rpt_grp;
-                currentRow++;
-            }
-
-            // Calculate Average (Months with value > 0)
-            const months = [row.Jan, row.Feb, row.Mar, row.Apr, row.May, row.Jun, row.Jul, row.Aug, row.Sep, row.Oct, row.Nov, row.Dec];
-            const activeMonths = months.filter(val => val > 0);
-            const avgValue = activeMonths.length > 0 
-                ? (activeMonths.reduce((a, b) => a + b, 0) / activeMonths.length).toFixed(2) 
-                : 0;
-
-            const target = row['FY Target'] || 0;
-
-            // Add the data row
-            const dataRow = worksheet.getRow(currentRow);
-            dataRow.values = [
-                row.Ministry,
-                target,
-                ...months,
-                parseFloat(avgValue)
-            ];
-
-            // Conditional Formatting for AVG column (Column P / Index 15)
-            const avgCell = dataRow.getCell(15);
-            if (parseFloat(avgValue) >= target && target > 0) {
-                avgCell.font = { color: { argb: 'FF008000' }, bold: true }; // Green
-            } else if (target > 0) {
-                avgCell.font = { color: { argb: 'FFFF0000' }, bold: true }; // Red
-            }
-
-            currentRow++;
-        });
-
-        // Column Widths
-        worksheet.getColumn(1).width = 30; // Ministry
-        for (let i = 2; i <= 15; i++) {
-            worksheet.getColumn(i).width = 12; // Targets, Months, and AVG
-        }
-
-        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        res.setHeader('Content-Disposition', 'attachment; filename=MinistryReport.xlsx');
-
-        const buffer = await workbook.xlsx.writeBuffer();
-        res.send(buffer);
-
-    } catch (error) {
-        console.error("Export Error:", error);
-        res.status(500).send("Internal Server Error");
-    }
-});
-
-
 //==============official download excel route with conditional formatting and all that good stuff, this is the one being called in the frontend when user clicks download excel button, the above one is just a sample for testing=================//
 // router.get('/downloadExcel', async (req, res) => {
 //    console.log('***FIRING DOWNLOAD EXCEL() ****** ')
@@ -1240,7 +1140,7 @@ router.get('/google/callback', async (req, res) => {
     } 
 });
 
-//=============ACTUAL RESERVE====================//
+//=============ACTUAL RESERVE save room save-room  room-res reserve====================//
 //const { google } = require('googleapis');
 router.post('/room-reserve', async (req, res) => {
 
@@ -1372,8 +1272,6 @@ router.post('/room-reserve', async (req, res) => {
         // This single block now handles freeing the connection stream for BOTH success, limit rejects, and errors safely.
         if (connection) connection.release();
     }
-
-
 
 }); //===================END RESERVATION=========================//
 
@@ -1527,18 +1425,90 @@ router.post('/register-leader', async (req, res) => {
     }
 });
 
-router.get('/testmail', async(req,res)=>	{
+//==== GET ALL DGRP LEADERS 
+// Endpoint: GET /getdgrp
+router.get('/getdgrp/:description/:ageBracket/:day/:time', async (req, res) => {
+    try {
+        // Read URL variables sent by the frontend fetch request
+        const { description, ageBracket, day, time } = req.params;
 
-  let transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: 'adminbesi@gmail.com',
-      pass: 'eumgsmqfjrebyxvn'
-    },
-     tls:{
-            rejectUnauthorized:false
+        // Base query stringhow 
+        let queryText = `
+            SELECT 
+                full_name, 
+                email, 
+                group_description, 
+                age_bracket, 
+                meeting_day, 
+                meeting_time, 
+                meeting_place 
+            FROM bgc_dgroup
+            WHERE 1=1
+        `;
+        const queryParams = [];
+
+        // Check each variable and dynamically build secure query bindings
+        if (description && description !== 'NA') {
+            queryText += ` AND group_description = ?`;
+            queryParams.push(description);
         }
-  });
+        if (ageBracket && ageBracket !== 'NA') {
+            queryText += ` AND age_bracket = ?`;
+            queryParams.push(ageBracket);
+        }
+        if (day && day !== 'NA') {
+            queryText += ` AND meeting_day = ?`;
+            queryParams.push(day);
+        }
+        if (time && time !== 'NA') {
+            queryText += ` AND meeting_time = ?`;
+            queryParams.push(time);
+        }
+
+        // Add sorting sequence at the tail end
+        queryText += `
+            ORDER BY 
+                FIELD(meeting_day, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'),
+                STR_TO_DATE(meeting_time, '%l:%i %p')
+        `;
+
+        console.log( "Constructed SQL Query:", queryText, "With Parameters:", queryParams);
+
+        // Destructure utilizing your style layout
+        const [result] = await db.query(queryText, queryParams);
+        
+        // Respond with only matching records array
+        res.status(200).json(result);
+
+    } catch (error) {
+        console.error('Database Query Error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+//=========ENDPOINT FOR EMAIL TESTING
+router.get('/emailer/:emailto/:nameto/:emailfrom/:namefrom', async(req,res)=>	{
+
+//   let transporter = nodemailer.createTransport({
+//     service: 'gmail',
+//     auth: {
+//       user: 'adminbesi@gmail.com',
+//       pass: 'eumgsmqfjrebyxvn'
+//     },
+//      tls:{
+//             rejectUnauthorized:false
+//         }
+//   });
+
+    const transporter = nodemailer.createTransport({
+        host: 'smtp.hostinger.com',
+        port: 465,
+        secure: true,
+        auth: {
+        user: 'admin@ccfbgc.org',
+        pass: 'Wemby#1MVP',
+        },
+    });
+
 
   try {
 
@@ -1547,25 +1517,36 @@ router.get('/testmail', async(req,res)=>	{
             <meta charset="UTF-8">
             <meta http-equiv="X-UA-Compatible" content="IE=edge">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Document</title>
+            <title>CCF BGC DGROUP INQUIRY</title>
         </head>
-        <body>
-            Dear User,<br><br>Thank you for your Data Entry.<br><br>
-            <font color=red>PLS. DO NOT REPLY, THIS IS A SYSTEM GENERATED EMAIL.</font>
-            <br><br><br><br>        </body>
-        </html>	`
+        <body style="font-family: Arial, sans-serif; color: #333333; line-height: 1.5;">
+            
+           
 
+            Dear ${req.params.nameto},<br><br>
+            This is an inquiry from <strong>${req.params.namefrom.toUpperCase()}</strong>, 
+            regarding joining your DGroup in CCF BGC.<br><br>
+            You can reach him/her @ <a href="mailto:${req.params.emailfrom}">${req.params.emailfrom}</a> <br><br>
+            
+            <span style="color: #DC3545; font-weight: bold;">PLS. DO NOT REPLY, THIS IS A SYSTEM GENERATED EMAIL.</span>
+            <br><br>
+             <!-- Styled Logo Header Container -->
+            <div style="background-color: #0F2C59; padding: 15px; border-radius: 6px; text-align: left; margin-bottom: 20px; max-width: 250px;">
+                <img src="https://ccfbgc.org/assets/img/bgclogo.png" alt="CCF BGC Logo" width="200" style="display: block; border: 0;">
+            </div>
+        </body>
+        </html>`;
     
         const mailOptions = {
-            from: '"ADMIN @ BESI" <noreply@asianowapp.com>',
-
-            to: '"Caloy" <anaiahdaniel@gmail.com>',
-            subject: `== APPROVED entry==`,
-            html: htmltemp,
+            from: `"ADMIN @ CCF BGC" <admin@ccfbgc.org>`,
+            to: `"${req.params.nameto}" <${req.params.emailto}>`,
+            bcc: `anaiahdaniel@gmail.com`,
+            subject: `CCF BGC DGROUP INQUIRY FROM ${req.params.namefrom.toUpperCase()} <${req.params.emailfrom}>`,
+            html: htmltemp
             
         }
-        
-        transporter.sendMail(mailOptions,(err,info)=>{
+      
+       await transporter.sendMail(mailOptions,(err,info)=>{
             if(err){
                 console.log('nope',err)
                 res.json({status:false})
@@ -1574,8 +1555,8 @@ router.get('/testmail', async(req,res)=>	{
                 console.log('**** MAIL SENT! *****')
                                                         
                 res.json({
-                    message: "UPDATED Successfully!",
-                    voice:"Equipment Updated Successfully!"
+                    message: "Email sent successfully!",
+                    voice:"Email sent successfully!"
                 })
                 
                 //end Utils.deletepdf
