@@ -1467,7 +1467,7 @@ router.get('/getdgrp/:description/:ageBracket/:day/:time', async (req, res) => {
 
         // Add sorting sequence at the tail end
         queryText += `
-            ORDER BY 
+            ORDER BY full_name,
                 FIELD(meeting_day, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'),
                 STR_TO_DATE(meeting_time, '%l:%i %p')
         `;
@@ -1521,8 +1521,6 @@ router.get('/emailer/:emailto/:nameto/:emailfrom/:namefrom', async(req,res)=>	{
         </head>
         <body style="font-family: Arial, sans-serif; color: #333333; line-height: 1.5;">
             
-           
-
             Dear ${req.params.nameto},<br><br>
             This is an inquiry from <strong>${req.params.namefrom.toUpperCase()}</strong>, 
             regarding joining your DGroup in CCF BGC.<br><br>
