@@ -272,10 +272,6 @@ router.post('/save-target', async (req, res) => {
 });
 
 //==============official download excel route with conditional formatting and all that good stuff, this is the one being called in the frontend when user clicks download excel button, the above one is just a sample for testing=================//
-// =========================================================================
-// PART 1: EXPRESS ROUTE HANDLER & DATA QUERIES
-// =========================================================================
-
 router.get('/downloadExcel', async (req, res) => {
     console.log('*** FIRING DOWNLOAD EXCEL (REFACTORED) ***')
     try {
@@ -319,31 +315,14 @@ router.get('/downloadExcel', async (req, res) => {
             GROUP BY r.rpt_grp, r.rpt_description, r.rpt_sequence
             ORDER BY r.rpt_grp, r.rpt_sequence;`;
 
-        // --- QUERY 3: PORTION FOR ADDING SHEET 3 YTD DATA ---
-        // Pulls records sequentially filtered by the current calendar year
-        const ytdDetailSql = `
-            SELECT 
-                DATE_FORMAT(date_added, '%Y-%m-%d') AS 'Date',
-                ministry_segment AS 'Ministry',
-                headcount AS 'Count',
-                service AS 'Service'
-            FROM bgc_headcount
-            WHERE YEAR(date_added) = YEAR(CURDATE())
-            ORDER BY date_added DESC, ministry_segment ASC;`;
-
-        // Execute all three database threads in parallel 
-        const [[summaryRows], [detailedRows], [ytdRows]] = await Promise.all([
+        const [[summaryRows], [detailedRows]] = await Promise.all([
             db.query(summarySql),
-            db.query(detailedSql),
-            db.query(ytdDetailSql)
+            db.query(detailedSql)
         ]);
 
         const workbook = new ExcelJS.Workbook();
         const today = new Date();
         const formattedDate = today.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-// =========================================================================
-// PART 2: EXCELJS WORKBOOK CONSTRUCTION LOOP & RESPONSES
-// =========================================================================
 
         // ==========================================
         // SHEET 1: MINISTRY REPORT (Original Summary)
@@ -397,32 +376,39 @@ router.get('/downloadExcel', async (req, res) => {
         // ==========================================
         const detailedSheet = workbook.addWorksheet('Detailed');
 
+        // Brand Headers spanning across all 26 columns (A to Z)
         detailedSheet.mergeCells('A1:Z1'); detailedSheet.getCell('A1').value = 'CCF BGC'; detailedSheet.getCell('A1').font = { bold: true, size: 12 };
         detailedSheet.mergeCells('A2:Z2'); detailedSheet.getCell('A2').value = '4th Flr, One Bonifactio High Street Mall'; detailedSheet.getCell('A2').font = { bold: true, size: 12 };
         detailedSheet.mergeCells('A3:Z3'); detailedSheet.getCell('A3').value = '5th Ave, BGC, Taguig, Metro Manila'; detailedSheet.getCell('A3').font = { bold: true, size: 12 };
         detailedSheet.mergeCells('A4:Z4'); detailedSheet.getCell('A4').value = 'Detailed Attendance Breakdown (Jan - Dec)'; detailedSheet.getCell('A4').font = { bold: true, size: 12 };
         detailedSheet.mergeCells('A5:Z5'); detailedSheet.getCell('A5').value = `As of ${formattedDate}`;
 
+        // Two-Tier Header Layout (Row 7: Months, Row 8: AM/PM Subheaders)
         const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         
+        // Merge Month blocks on Row 7
         monthNames.forEach((month, index) => {
-            const startColIdx = 2 + (index * 2);
+            const startColIdx = 2 + (index * 2); // Column B is 2, D is 4, etc.
             detailedSheet.mergeCells(7, startColIdx, 7, startColIdx + 1);
             const cell = detailedSheet.getCell(7, startColIdx);
             cell.value = month;
             cell.font = { bold: true };
             cell.alignment = { horizontal: 'center' };
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } }; // Soft Grey
         });
+        //detailedSheet.getCell('A7').value = "";
+        //detailedSheet.getCell('A7').font = { bold: true };
         detailedSheet.getCell('Z7').value = "YTD Total";
         detailedSheet.getCell('Z7').font = { bold: true };
         detailedSheet.getCell('Z7').alignment = { horizontal: 'center' };
 
+        // Subheaders on Row 8
         const subHeaders = [""];
         for(let i=0; i<12; i++) { subHeaders.push("AM", "PM"); }
         subHeaders.push("Total");
         
         const row8 = detailedSheet.getRow(8);
+       
         row8.values = subHeaders;
         row8.eachCell((cell, colNumber) => {
             cell.font = { bold: true, size: 10 };
@@ -435,16 +421,20 @@ router.get('/downloadExcel', async (req, res) => {
         let detailedLastGrp = "";
 
         detailedRows.forEach((row) => {
+            // Section Category Headers
             if (row.rpt_grp !== detailedLastGrp) {
+                // Styling: Dark Grey Background, White Bold Text
                 detailedSheet.mergeCells(`A${detailedCurrentRow}:Z${detailedCurrentRow}`);
                 const groupCell = detailedSheet.getCell(`A${detailedCurrentRow}`);
                 groupCell.value = row.rpt_grp.toUpperCase();
                 groupCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF333333' } };
                 groupCell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                
                 detailedLastGrp = row.rpt_grp;
                 detailedCurrentRow++;
             }
 
+            // Extract values dynamically from fields keys
             const rowValues = [row.Ministry];
             let rowYtdTotal = 0;
 
@@ -454,73 +444,38 @@ router.get('/downloadExcel', async (req, res) => {
                 rowValues.push(amVal, pmVal);
                 rowYtdTotal += (amVal + pmVal);
             }
-            rowValues.push(rowYtdTotal);
+            rowValues.push(rowYtdTotal); // Append grand total to end
 
             const dataRow = detailedSheet.getRow(detailedCurrentRow);
             dataRow.values = rowValues;
 
+            // Alignment and style rules
             for (let i = 2; i <= 26; i++) {
                 dataRow.getCell(i).alignment = { horizontal: 'center' };
             }
-            dataRow.getCell(26).font = { bold: true, color: { argb: 'FF180B78' } };
+            dataRow.getCell(26).font = { bold: true, color: { argb: 'FF180B78' } }; // Bold Blue for Total
+
             detailedCurrentRow++;
         });
 
-        detailedSheet.getColumn(1).width = 35;
-        for (let i = 2; i <= 25; i++) { detailedSheet.getColumn(i).width = 6; }
-        detailedSheet.getColumn(26).width = 14;
+        // Set Width Configuration profiles
+        detailedSheet.getColumn(1).width = 35; // Ministry Column
+        for (let i = 2; i <= 25; i++) { detailedSheet.getColumn(i).width = 6; } // Slim layout for AM/PM pairs
+        detailedSheet.getColumn(26).width = 14; // YTD Total column
 
-        // ==========================================================
-        // PORTION FOR ADDING ANOTHER SHEET: YTD Detail (SHEET 3)
-        // ==========================================================
-        const ytdSheet = workbook.addWorksheet('YTD Detail');
+        // ==========================================
+        // STREAM DOWN FILE DOWNLOAD
+        // ==========================================
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename=MinistryReport.xlsx');
 
-        // Corporate Brand Identity headers matching previous sheets
-        ytdSheet.mergeCells('A1:D1'); ytdSheet.getCell('A1').value = 'CCF BGC'; ytdSheet.getCell('A1').font = { bold: true, size: 12 };
-        ytdSheet.mergeCells('A2:D2'); ytdSheet.getCell('A2').value = '4th Flr, One Bonifactio High Street Mall'; ytdSheet.getCell('A2').font = { bold: true, size: 12 };
-        ytdSheet.mergeCells('A3:D3'); ytdSheet.getCell('A3').value = '5th Ave, BGC, Taguig, Metro Manila'; ytdSheet.getCell('A3').font = { bold: true, size: 12 };
-        ytdSheet.mergeCells('A4:D4'); ytdSheet.getCell('A4').value = 'Granular YTD Headcount Transactions'; ytdSheet.getCell('A4').font = { bold: true, size: 12 };
-        ytdSheet.mergeCells('A5:D5'); ytdSheet.getCell('A5').value = `As of ${formattedDate}`;
+        const buffer = await workbook.xlsx.writeBuffer();
+        res.send(buffer);
 
-        // Definitive table column mappings
-        ytdSheet.columns = [
-            { header: 'Date', key: 'Date', width: 15 },
-            { header: 'Ministry', key: 'Ministry', width: 35 },
-            { header: 'Count', key: 'Count', width: 12 },
-            { header: 'Service', key: 'Service', width: 15 }
-        ];
-
-        // Apply visual headers pattern design styling on row 7
-        const ytdHeaderRow = ytdSheet.getRow(7);
-        ytdHeaderRow.values = ['Date', 'Ministry', 'Count', 'Service'];
-        ytdHeaderRow.eachCell((cell, colNumber) => {
-            cell.font = { bold: true }; 
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } }; 
-            cell.border = { bottom: { style: 'thin' } };
-            if (colNumber !== 2) cell.alignment = { horizontal: 'center' };
-        });
-
-        // Populate database rows safely into sheet grid
-        ytdRows.forEach((row) => {
-            const addedRow = ytdSheet.addRow([row.Date, row.Ministry, Number(row.Count), row.Service]);
-            addedRow.getCell(1).alignment = { horizontal: 'center' };
-            addedRow.getCell(3).alignment = { horizontal: 'center' };
-            addedRow.getCell(4).alignment = { horizontal: 'center' };
-        });
-
-    // ==========================================
-    // STREAM DOWN FILE DOWNLOAD
-    // ==========================================
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', 'attachment; filename=MinistryReport.xlsx');
-
-    const buffer = await workbook.xlsx.writeBuffer();
-    res.send(buffer);
-
-} catch (error) {
-    console.error("Excel Export Error:", error);
-    res.status(500).json({ error: "Failed to generate Excel file" });
-}
+    } catch (error) {
+        console.error("Excel Export Error:", error);
+        res.status(500).json({ error: "Failed to generate Excel file" });
+    }
 });
 
 //====HELPERS
