@@ -1007,8 +1007,14 @@ router.post('/register-leader', async (req, res) => {
         // 1. Destructure the values from your payload object model
         const { name, email, role, cp, upline, ministry, description, ageBracket, day, time, place } = req.body;
         const defaultMinistryId = ministry;
-        const defaultGrpId = role;
+        const defaultGrpId = role; 
+        let defaultRole = '';
 
+        if(role !== '9' ) {
+            defaultRole = 'Leader';
+        }else{
+            defaultRole = 'Member';
+        }    
         console.log( req.body)
         //return false;
 
