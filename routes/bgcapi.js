@@ -1090,7 +1090,7 @@ router.get('/getdgrp/:description/:ageBracket/:day/:time', async (req, res) => {
                 meeting_time, 
                 meeting_place 
             FROM bgc_dgroup
-            WHERE 1=1
+            WHERE account_role = 'Leader'
         `;
         const queryParams = [];
 
