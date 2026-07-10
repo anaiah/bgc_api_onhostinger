@@ -1321,11 +1321,14 @@ router.get('/mark-attendance/:id/:user/:date/:hash', async (req, res) => {
 });
 
 // HTML UI Template Generator
+// HTML UI Template Generator (Pure CSS, No Framework Dependencies)
 function renderAttendanceStatus({ title, message, isSuccess, redirectUrl }) {
-    const themeColor = isSuccess ? "#198754" : "#dc3545"; // Bootstrap Success Green vs Danger Red
+    const themeColor = isSuccess ? "#198754" : "#dc3545"; 
+    
+    // Pure inline SVG Icons to guarantee immediate rendering
     const icon = isSuccess 
-        ? `<svg width="64" height="64" fill="currentColor" class="text-success mb-3" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg>`
-        : `<svg width="64" height="64" fill="currentColor" class="text-danger mb-3" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/></svg>`;
+        ? `<svg width="64" height="64" fill="${themeColor}" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg>`
+        : `<svg width="64" height="64" fill="${themeColor}" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/></svg>`;
 
     return `
     <!DOCTYPE html>
@@ -1334,40 +1337,82 @@ function renderAttendanceStatus({ title, message, isSuccess, redirectUrl }) {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${title}</title>
-        <!-- Load modern Bootstrap 5 Dark Theme -->
-        <link href="https://jsdelivr.net" rel="stylesheet">
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
         <style>
-            body { background-color: #121212; color: #e0e0e0; font-family: system-ui, -apple-system, sans-serif; }
-            .status-card { border-top: 5px solid ${themeColor}; max-width: 400px; width: 90%; }
+            /* Reset & Baseline styles */
+            * { box-sizing: border-box; }
+            body { 
+                background-color: #121212; 
+                color: #e0e0e0; 
+                font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                margin: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 100vh;
+                padding: 15px;
+            }
+            /* Clean Dark-Theme UI Card */
+            .status-card {
+                background-color: #1e1e1e;
+                border: 1px solid #2d2d2d;
+                border-top: 5px solid ${themeColor};
+                border-radius: 16px;
+                padding: 30px 24px;
+                text-align: center;
+                max-width: 400px;
+                width: 100%;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            }
+            .title {
+                color: #ffffff;
+                font-size: 22px;
+                font-weight: 700;
+                margin: 15px 0 10px 0;
+            }
+            .message {
+                color: #aaaaaa;
+                font-size: 14px;
+                line-height: 1.5;
+                margin: 0 0 24px 0;
+            }
+            .footer-divider {
+                border-top: 1px solid #2d2d2d;
+                padding-top: 15px;
+                margin-top: 5px;
+            }
+            .countdown-text {
+                font-size: 13px;
+                color: #777777;
+                margin: 0;
+            }
+            #countdown {
+                font-weight: 700;
+                color: #ffffff;
+            }
         </style>
-        <!-- 3-Second Automatic Meta Redirect Fallback -->
+        <!-- Security redirect fallback -->
         <meta http-equiv="refresh" content="5;url=${redirectUrl}">
     </head>
-    <body class="d-flex align-items-center justify-content-center min-vh-100 m-0">
+    <body>
 
-        <div class="card bg-dark border-secondary shadow-lg p-4 text-center status-card rounded-4">
-            <div class="card-body">
-                ${icon}
-                <h3 class="card-title text-white mb-3 fw-bold">${title}</h3>
-                <p class="card-text text-white-50 small mb-4">${message}</p>
-                
-                <div class="border-top border-secondary pt-3 mt-2">
-                    <p class="small text-muted mb-0">
-                        Redirecting you in <span id="countdown" class="fw-bold text-white">3</span> seconds...
-                    </p>
-                </div>
+        <div class="status-card">
+            ${icon}
+            <div class="title">${title}</div>
+            <p class="message">${message}</p>
+            
+            <div class="footer-divider">
+                <p class="countdown-text">
+                    Redirecting you in <span id="countdown">5</span> seconds...
+                </p>
             </div>
         </div>
 
-        <!-- Real-time fluid countdown animation script -->
         <script>
             let timeLeft = 5;
             const timerElement = document.getElementById('countdown');
             const interval = setInterval(() => {
                 timeLeft--;
-                if(timerElement) timerElement.textContent = timeLeft;
+                if (timerElement) timerElement.textContent = timeLeft;
                 if (timeLeft <= 0) {
                     clearInterval(interval);
                 }
@@ -1377,6 +1422,7 @@ function renderAttendanceStatus({ title, message, isSuccess, redirectUrl }) {
     </html>
     `;
 }
+
 
 router.get('/testis', async (req,res) => {
         console.log('FRING TESTIS IN API.JS')
