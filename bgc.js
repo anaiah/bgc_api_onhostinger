@@ -75,7 +75,7 @@ app.use(bodyParser.urlencoded({extended:false}))
 app.use(cors())
 
 app.use((req, res, next) => {
-    const allowedOrigins = ['https://ccfbgc.org', 'https://www.ccfbgc.org','http://127.0.0.1:5500'];
+    const allowedOrigins = ['https://ccfbgc.org', 'https://www.ccfbgc.org'];
     const origin = req.headers.origin;
 
     if (allowedOrigins.includes(origin)) {
@@ -93,10 +93,6 @@ app.use((req, res, next) => {
     
     next();
 });
-
-
-
-
 
 //======== END NODEJS CORS SETTING
 const getRandomPin = (chars, len)=>[...Array(len)].map(
