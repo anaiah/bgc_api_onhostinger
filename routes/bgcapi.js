@@ -1164,6 +1164,8 @@ router.get('/emailer/:emailto/:nameto/:emailfrom/:namefrom', async(req,res)=>	{
 
 
   try {
+  // Define the URL endpoint you want the user to trigger (e.g., to confirm or approve)
+    const actionUrl = `https://yourdomain.com{req.params.emailfrom}`;
 
     let htmltemp = `<html lang="en">
         <head>
@@ -1172,21 +1174,29 @@ router.get('/emailer/:emailto/:nameto/:emailfrom/:namefrom', async(req,res)=>	{
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>CCF BGC DGROUP INQUIRY</title>
         </head>
-        <body style="font-family: Arial, sans-serif; color: #333333; line-height: 1.5;">
+        <body style="font-family: Arial, sans-serif; color: #333333; line-height: 1.5; margin: 0; padding: 20px;">
             
             Dear ${req.params.nameto},<br><br>
             This is an inquiry from <strong>${req.params.namefrom.toUpperCase()}</strong>, 
             regarding joining your DGroup in CCF BGC.<br><br>
             You can reach him/her @ <a href="mailto:${req.params.emailfrom}">${req.params.emailfrom}</a> <br><br>
             
+            <!-- Safe, Cross-Platform Styled Button Layer -->
+            <div style="margin: 25px 0;">
+                <a href="${actionUrl}" 
+                   style="background-color: #0F2C59; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 4px; font-weight: bold; display: inline-block;">
+                   Review Inquiry
+                </a>
+            </div>
+
             <span style="color: #DC3545; font-weight: bold;">PLS. DO NOT REPLY, THIS IS A SYSTEM GENERATED EMAIL.</span>
             <br><br>
-             <!-- Styled Logo Header Container -->
+            
+            <!-- Styled Logo Header Container -->
             <div style="background-color: #0F2C59; padding: 15px; border-radius: 6px; text-align: left; margin-bottom: 20px; max-width: 250px;">
                 <img src="https://ccfbgc.org/assets/img/bgclogo.png" alt="CCF BGC Logo" width="200" style="display: block; border: 0;">
             </div>
-        </body>
-        </html>`;
+        </body></html>`;
     
         const mailOptions = {
             from: `"ADMIN @ CCF BGC" <admin@ccfbgc.org>`,
