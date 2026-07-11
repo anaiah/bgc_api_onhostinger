@@ -1026,7 +1026,7 @@ router.post('/register-leader', async (req, res) => {
         `;
         
         const [groupResult] = await db.query(insertGroupSQL, [
-            name, email, role, cp, upline, description, ageBracket, day, time, place
+            name, email, defaultRole, cp, upline, description, ageBracket, day, time, place
         ]);
 
         // 3. EVALUATE ROLE: Only process user account creation if they are a Leader
@@ -1292,7 +1292,7 @@ router.get('/mark-attendance/:id/:user/:date/:hash', async (req, res) => {
 
     // C. Database Log
     try {
-        const query = `INSERT INTO bgc_exalt_attendance (user_id, fname, date_added) VALUES (?,  ?, NOW())`;
+        const query = `INSERT INTO bgc_exalt_attendance (user_id, fname, date_added) VALUES (?,  ?, CONVERT_TZ(NOW(), 'SYSTEM', '+08:00'))`;
         await db.query(query, [id, user]);
         
         // Return a nice confirmation page to show on the phone screen
