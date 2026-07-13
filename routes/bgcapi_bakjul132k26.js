@@ -1138,7 +1138,6 @@ router.get('/getdgrp/:description/:ageBracket/:day/:time', async (req, res) => {
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
-
 //=========ENDPOINT FOR EMAIL TESTING
 router.get('/emailer/:emailto/:nameto/:emailfrom/:namefrom/:cpno', async(req,res)=>	{
 
@@ -1165,8 +1164,6 @@ router.get('/emailer/:emailto/:nameto/:emailfrom/:namefrom/:cpno', async(req,res
 
 
   try {
-      // Destructure parameters from the URL path pattern
-      const { emailto, nameto, emailfrom, namefrom, cpno } = req.params;
 
       // Define the URL endpoint you want the user to trigger (e.g., to confirm or approve)
     // const actionUrl = `https://yourdomain.com{req.params.emailfrom}`;
@@ -1212,11 +1209,10 @@ router.get('/emailer/:emailto/:nameto/:emailfrom/:namefrom/:cpno', async(req,res
         </head>
         <body style="font-family: Arial, sans-serif; color: #333333; line-height: 1.5;">
             
-            Dear ${nameto},<br><br>
-            This is an inquiry from <strong>${namefrom.toUpperCase()}</strong>, 
+            Dear ${req.params.nameto},<br><br>
+            This is an inquiry from <strong>${req.params.namefrom.toUpperCase()}</strong>, 
             regarding joining your DGroup in CCF BGC.<br><br>
-            You can reach him/her @ <a href="mailto:${emailfrom}">${emailfrom}</a> <br>
-            Or you can call/sms him/her @ <strong>${cpno}</strong><br><br>
+            You can reach him/her @ <a href="mailto:${req.params.emailfrom}">${req.params.emailfrom}</a> <br><br>
             
             <span style="color: #DC3545; font-weight: bold;">PLS. DO NOT REPLY, THIS IS A SYSTEM GENERATED EMAIL.</span>
             <br><br>
@@ -1229,14 +1225,14 @@ router.get('/emailer/:emailto/:nameto/:emailfrom/:namefrom/:cpno', async(req,res
     
         const mailOptions = {
             from: `"ADMIN @ CCF BGC" <admin@ccfbgc.org>`,
-            to: `"${nameto}" <${emailto}>`,
-            bcc: `anaiahdaniel@gmail.com, ${emailfrom}`,
-            subject: `CCF BGC DGROUP INQUIRY FROM ${namefrom.toUpperCase()} <${emailfrom}>`,
+            to: `"${req.params.nameto}" <${req.params.emailto}>`,
+            bcc: `anaiahdaniel@gmail.com`,
+            subject: `CCF BGC DGROUP INQUIRY FROM ${req.params.namefrom.toUpperCase()} <${req.params.emailfrom}>`,
             html: htmltemp
-        };
+            
+        }
       
-        // Modern async/await nodemailer handling wrapper
-        await transporter.sendMail(mailOptions, async (err, info) => {
+       await transporter.sendMail(mailOptions,(err,info)=>{
             if(err){
                 console.log('nope',err)
                 res.json({status:false})
@@ -1249,20 +1245,6 @@ router.get('/emailer/:emailto/:nameto/:emailfrom/:namefrom/:cpno', async(req,res
                     voice:"Email sent successfully!"
                 })
                 
-                // Save log entry to your MySQL database using 'db' object pool
-                try {
-                    const insertQuery = `
-                        INSERT INTO bgc_dgrp_inquiry 
-                        (dgrp_email, dgrp_leader, dgrp_seeker_email, dgrp_seeker_name, phone_seeker) 
-                        VALUES (?, ?, ?, ?, ?)
-                    `;
-                    // Executing dynamic values against your table matching schema constraints
-                    await db.query(insertQuery, [emailto, nameto, emailfrom, namefrom, cpno]);
-                    console.log('**** DATA LOGGED IN BGC_DGRP_INQUIRY! ****');
-                } catch (dbErr) {
-                    console.error('Failed to log database inquiry history track:', dbErr);
-                }
-
                 //end Utils.deletepdf
             }//===eif
         })//=========end/ transport email
