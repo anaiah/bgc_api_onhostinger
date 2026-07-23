@@ -1005,7 +1005,7 @@ router.delete('/deleteBooking/:id', async (req, res) => {
 router.post('/register-leader', async (req, res) => {
     try {
         // 1. Destructure the values from your payload object model
-        const { name, email, role, cp, upline, invitedvia, ministry, description, ageBracket, day, time, place } = req.body;
+        const { name, email, role, cp, upline, ministry, description, ageBracket, day, time, place } = req.body;
         const defaultMinistryId = ministry;
         const defaultGrpId = role; 
         let defaultRole = '';
@@ -1021,12 +1021,12 @@ router.post('/register-leader', async (req, res) => {
         // 2. ALWAYS RUN: Insert into bgc_dgroup regardless of role status
         const insertGroupSQL = `
             INSERT INTO bgc_dgroup 
-            (full_name, email, account_role, cp_number, upline_name, invited_via, group_description, age_bracket, meeting_day, meeting_time, meeting_place) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (full_name, email, account_role, cp_number, upline_name,  group_description, age_bracket, meeting_day, meeting_time, meeting_place) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
         
         const [groupResult] = await db.query(insertGroupSQL, [
-            name, email, defaultRole, cp, upline, invitedvia, description, ageBracket, day, time, place
+            name, email, defaultRole, cp, upline, description, ageBracket, day, time, place
         ]);
 
         // 3. EVALUATE ROLE: Only process user account creation if they are a Leader
@@ -1166,42 +1166,11 @@ router.get('/emailer/:emailto/:nameto/:emailfrom/:namefrom/:cpno', async(req,res
 
   try {
       // Destructure parameters from the URL path pattern
-      const { emailto, nameto, emailfrom, namefrom, cpno } = req.params;
+      const { emailto, nameto, emailfrom, namefrom, cpno, invitedvia } = req.params;
 
       // Define the URL endpoint you want the user to trigger (e.g., to confirm or approve)
     // const actionUrl = `https://yourdomain.com{req.params.emailfrom}`;
 
-    // let htmltemp = `<html lang="en">
-    //     <head>
-    //         <meta charset="UTF-8">
-    //         <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    //         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    //         <title>CCF BGC DGROUP INQUIRY</title>
-    //     </head>
-    //     <body style="font-family: Arial, sans-serif; color: #333333; line-height: 1.5; margin: 0; padding: 20px;">
-            
-    //         Dear ${req.params.nameto},<br><br>
-    //         This is an inquiry from <strong>${req.params.namefrom.toUpperCase()}</strong>, 
-    //         regarding joining your DGroup in CCF BGC.<br><br>
-    //         You can reach him/her @ <a href="mailto:${req.params.emailfrom}">${req.params.emailfrom}</a> <br><br>
-            
-    //         <!-- Safe, Cross-Platform Styled Button Layer -->
-    //         <div style="margin: 25px 0;">
-    //             <a href="${actionUrl}" 
-    //                style="background-color: #0F2C59; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 4px; font-weight: bold; display: inline-block;">
-    //                Review Inquiry
-    //             </a>
-    //         </div>
-
-    //         <span style="color: #DC3545; font-weight: bold;">PLS. DO NOT REPLY, THIS IS A SYSTEM GENERATED EMAIL.</span>
-    //         <br><br>
-            
-    //         <!-- Styled Logo Header Container -->
-    //         <div style="background-color: #0F2C59; padding: 15px; border-radius: 6px; text-align: left; margin-bottom: 20px; max-width: 250px;">
-    //             <img src="https://ccfbgc.org/assets/img/bgclogo.png" alt="CCF BGC Logo" width="200" style="display: block; border: 0;">
-    //         </div>
-    //     </body></html>`;
-    //************ this upper part is the new code */
     
     let htmltemp = `<html lang="en">
         <head>
@@ -1253,11 +1222,11 @@ router.get('/emailer/:emailto/:nameto/:emailfrom/:namefrom/:cpno', async(req,res
                 try {
                     const insertQuery = `
                         INSERT INTO bgc_dgrp_inquiry 
-                        (dgrp_email, dgrp_leader, dgrp_seeker_email, dgrp_seeker_name, phone_seeker) 
-                        VALUES (?, ?, ?, ?, ?)
+                        (dgrp_email, dgrp_leader, dgrp_seeker_email, dgrp_seeker_name, phone_seeker,invited_via) 
+                        VALUES (?, ?, ?, ?, ?, ?)
                     `;
                     // Executing dynamic values against your table matching schema constraints
-                    await db.query(insertQuery, [emailto, nameto, emailfrom, namefrom, cpno]);
+                    await db.query(insertQuery, [emailto, nameto, emailfrom, namefrom, cpno, invitedvia]);
                     console.log('**** DATA LOGGED IN BGC_DGRP_INQUIRY! ****');
                 } catch (dbErr) {
                     console.error('Failed to log database inquiry history track:', dbErr);
