@@ -1140,7 +1140,7 @@ router.get('/getdgrp/:description/:ageBracket/:day/:time', async (req, res) => {
 });
 
 //=========ENDPOINT FOR EMAIL TESTING
-router.get('/emailer/:emailto/:nameto/:emailfrom/:namefrom/:cpno', async(req,res)=>	{
+router.get('/emailer/:emailto/:nameto/:emailfrom/:namefrom/:cpno/:invitedvia', async(req,res)=>	{
 
 //   let transporter = nodemailer.createTransport({
 //     service: 'gmail',
