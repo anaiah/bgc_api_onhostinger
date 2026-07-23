@@ -1005,7 +1005,7 @@ router.delete('/deleteBooking/:id', async (req, res) => {
 router.post('/register-leader', async (req, res) => {
     try {
         // 1. Destructure the values from your payload object model
-        const { name, email, role, cp, upline, ministry, description, ageBracket, day, time, place } = req.body;
+        const { name, email, role, cp, upline, invitedvia, ministry, description, ageBracket, day, time, place } = req.body;
         const defaultMinistryId = ministry;
         const defaultGrpId = role; 
         let defaultRole = '';
@@ -1021,12 +1021,12 @@ router.post('/register-leader', async (req, res) => {
         // 2. ALWAYS RUN: Insert into bgc_dgroup regardless of role status
         const insertGroupSQL = `
             INSERT INTO bgc_dgroup 
-            (full_name, email, account_role, cp_number, upline_name, group_description, age_bracket, meeting_day, meeting_time, meeting_place) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (full_name, email, account_role, cp_number, upline_name, invited_via, group_description, age_bracket, meeting_day, meeting_time, meeting_place) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
         
         const [groupResult] = await db.query(insertGroupSQL, [
-            name, email, defaultRole, cp, upline, description, ageBracket, day, time, place
+            name, email, defaultRole, cp, upline, invitedvia, description, ageBracket, day, time, place
         ]);
 
         // 3. EVALUATE ROLE: Only process user account creation if they are a Leader
