@@ -8,7 +8,16 @@ let client
 try { require('dotenv').config(); 
 } catch (e) {
 
-} 
+}
+
+//for asn-hris new database
+/* g125c3@M312c4
+/*MySQL Database
+u899193124_asnhris
+1 MB
+MySQL User
+u899193124_asn07242k26
+*/
 const config = { 
     host: process.env.DB_HOST || 'srv2102.hstgr.io', 
     user: process.env.DB_USER || 'u462718148_ccfbgc', 

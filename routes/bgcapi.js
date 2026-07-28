@@ -1039,6 +1039,8 @@ router.post('/register-leader', async (req, res) => {
                 VALUES (?, ?, ?, ?)
             `;
             
+            console.log(insertUserSQL, [name, email, defaultGrpId, defaultMinistryId]);
+            
             await db.query(insertUserSQL, [
                 name, email, defaultGrpId, defaultMinistryId
             ]);
