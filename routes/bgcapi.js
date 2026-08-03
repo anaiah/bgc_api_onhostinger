@@ -855,6 +855,12 @@ router.post('/room-reserve', async (req, res) => {
             });
         }
 
+        console.log("PRODUCTION ENV VERIFICATION:", {
+    ID: process.env.GOOGLE_CLIENT_ID || "IS_UNDEFINED",
+    SECRET: process.env.GOOGLE_CLIENT_SECRET ? "PRESENT" : "IS_UNDEFINED",
+    URI: process.env.GOOGLE_REDIRECT_URI || "IS_UNDEFINED"
+});
+
         const oauth2Client = new google.auth.OAuth2(
             process.env.GOOGLE_CLIENT_ID,
             process.env.GOOGLE_CLIENT_SECRET,
